@@ -87,6 +87,24 @@
       </div>
     </div>
 
+    <button
+      v-if="!showSearch"
+      class="ai-floating-entry"
+      type="button"
+      aria-label="打开 AI 智能问答"
+      title="AI 智能问答"
+      @click="showSearch = true"
+    >
+      <span class="ai-entry-icon">
+        <img src="@/assets/images/ai-chat-avatar.png" alt="" />
+      </span>
+      <span class="ai-entry-copy">
+        <strong>AI 智能问答</strong>
+        <small>知识库实时解答</small>
+      </span>
+      <MessageCircle :size="16" class="ai-entry-tail" />
+    </button>
+
     <!-- 全局全屏搜索覆盖层 -> 已重构为 Gemini 手机版 AI 助手界面 -->
     <transition name="fade">
       <GeminiChatOverlay 
@@ -173,7 +191,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, nextTick, watch } from "vue";
+import { ref, onMounted, onUnmounted, nextTick } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { 
   Search, 
@@ -389,14 +407,6 @@ const handlePageScroll = (e: Event) => {
   isScrolled.value = customEvent.detail > 0;
 };
 
-watch(showSearch, (val) => {
-  if (val) {
-    document.body.style.overflow = "hidden";
-  } else {
-    document.body.style.overflow = "";
-  }
-});
-
 const toggleAccordion = (index: number) => {
   if (openAccordionIndex.value === index) {
     openAccordionIndex.value = null;
@@ -433,7 +443,6 @@ onUnmounted(() => {
   window.removeEventListener("scroll", handleScroll);
   window.removeEventListener("page-scroll", handlePageScroll);
   window.removeEventListener("resize", updateScreenSize);
-  document.body.style.overflow = "";
 });
 </script>
 
@@ -448,6 +457,80 @@ onUnmounted(() => {
   color: white;
   background: transparent; /* 完全透明 */
   padding: 18px 0;
+}
+
+.ai-floating-entry {
+  position: fixed;
+  right: 28px;
+  bottom: calc(28px + env(safe-area-inset-bottom));
+  z-index: 9990;
+  height: 64px;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px 10px 10px;
+  border: 1px solid rgba(74, 18, 94, 0.14);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.94);
+  color: var(--secondary-color);
+  box-shadow: 0 16px 34px rgba(45, 8, 59, 0.18);
+  cursor: pointer;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  transition: transform 0.28s ease, box-shadow 0.28s ease, border-color 0.28s ease;
+}
+
+.ai-floating-entry:hover {
+  transform: translateY(-3px);
+  border-color: rgba(74, 18, 94, 0.32);
+  box-shadow: 0 22px 42px rgba(45, 8, 59, 0.24);
+}
+
+.ai-entry-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  flex-shrink: 0;
+}
+
+.ai-entry-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.ai-entry-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+}
+
+.ai-entry-copy strong {
+  font-family: var(--font-heading);
+  font-size: 0.95rem;
+  line-height: 1.2;
+  font-weight: 800;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+
+.ai-entry-copy small {
+  margin-top: 3px;
+  color: #64748b;
+  font-size: 0.76rem;
+  line-height: 1.1;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+
+.ai-entry-tail {
+  color: var(--highlight-color);
+  flex-shrink: 0;
 }
 
 /* 滚动激活时：保持完全透明，无描边，无阴影 */
@@ -1836,6 +1919,24 @@ onUnmounted(() => {
 }
 
 @media (max-width: 768px) {
+  .ai-floating-entry {
+    right: 16px;
+    bottom: calc(16px + env(safe-area-inset-bottom));
+    height: 56px;
+    gap: 9px;
+    padding: 9px 11px 9px 9px;
+  }
+  .ai-entry-icon {
+    width: 40px;
+    height: 40px;
+  }
+  .ai-entry-copy strong {
+    font-size: 0.88rem;
+  }
+  .ai-entry-copy small,
+  .ai-entry-tail {
+    display: none;
+  }
   .menu-container {
     padding: 80px 6% 30px;
   }
