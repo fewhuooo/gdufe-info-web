@@ -44,9 +44,12 @@
                 v-for="item in navItems" 
                 :key="item.name"
                 class="nav-item-with-dropdown"
+                @mouseenter="openMegaMenu(item)"
+                @mouseleave="closeMegaMenu"
               >
                 <router-link :to="item.path" class="nav-link">
-                  {{ item.name }}
+                  <span>{{ item.name }}</span>
+                  <ChevronDown v-if="item.subMenu" :size="12" class="arrow-down" />
                 </router-link>
               </li>
             </ul>
@@ -171,6 +174,48 @@
         </div>
       </div>
     </transition>
+
+    <!-- 全宽下拉大面板 (Mega Drawer) -->
+    <transition name="slide-down-panel">
+      <div 
+        v-if="activeSubMenu" 
+        class="fullwidth-mega-drawer"
+        @mouseenter="keepMegaMenu"
+        @mouseleave="closeMegaMenu"
+      >
+        <div class="mega-drawer-inner">
+          <div class="mega-drawer-grid">
+            <div 
+              v-for="sub in activeSubMenu.subMenu" 
+              :key="sub.title"
+              class="mega-drawer-column"
+            >
+              <span class="mega-column-title">{{ sub.title }}</span>
+              <div class="mega-column-line"></div>
+              
+              <ul class="mega-column-links">
+                <li v-for="subLink in sub.items" :key="subLink.name">
+                  <router-link 
+                    :to="subLink.path" 
+                    class="mega-column-link"
+                    @click="activeSubMenu = null"
+                  >
+                    {{ subLink.name }}
+                  </router-link>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </transition>
+
+    <!-- 悬浮背景遮罩 -->
+    <div 
+      v-if="activeSubMenu" 
+      class="mega-drawer-backdrop" 
+      @click="activeSubMenu = null"
+    ></div>
   </header>
 </template>
 
