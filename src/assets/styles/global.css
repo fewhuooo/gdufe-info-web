@@ -1,0 +1,110 @@
+/* global.css */
+@import "./variables.css";
+@import "./reset.css";
+
+/* ==========================================
+   流式等比响应式适配核心设计 (Fluid Scaling Core)
+   确保在高分辨率/低分辨率下文字、卡片、图片比例全自动等比缩放
+   ========================================== */
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+}
+
+@media (min-width: 3840px) {
+  html {
+    font-size: 26px; /* 4K 巨屏下整体放大以填满布局，免去空旷感 */
+  }
+}
+
+@media (min-width: 2560px) {
+  html {
+    font-size: 20px; /* 2K 屏下等比放大 */
+  }
+}
+
+@media (min-width: 1920px) {
+  html {
+    font-size: 17.5px; /* 1080p 宽屏下微调拉伸填充率 */
+  }
+}
+
+@media (max-width: 1600px) {
+  html {
+    font-size: 15px; /* 笔记本紧凑屏下等比缩小比例 */
+  }
+}
+
+@media (max-width: 1400px) {
+  html {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 1200px) {
+  html {
+    font-size: 13px; /* 窄屏和平板下等比轻量化 */
+  }
+}
+
+body {
+  transition: background-color 0.4s ease, color 0.4s ease;
+}
+
+.container {
+  max-width: var(--container-width);
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.section-title {
+  font-family: var(--font-heading);
+  font-size: 2.25rem;
+  font-weight: 800;
+  color: var(--secondary-color);
+  text-align: center;
+  margin-bottom: 3.5rem;
+  position: relative;
+  letter-spacing: 2px;
+}
+
+
+.section-title::after {
+  content: "";
+  display: block;
+  width: 50px;
+  height: 4px;
+  background-color: var(--accent-color);
+  margin: 1.25rem auto 0;
+  border-radius: 2px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 24px;
+  border-radius: var(--border-radius);
+  font-weight: 500;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  border: none;
+}
+.btn-primary {
+  background-color: var(--primary-color);
+  color: white;
+}
+.btn-primary:hover {
+  background-color: var(--highlight-color);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+.btn-outline {
+  background-color: transparent;
+  color: white;
+  border: 1px solid rgba(255,255,255,0.3);
+}
+.btn-outline:hover {
+  background-color: rgba(255,255,255,0.1);
+  border-color: white;
+}

@@ -1,0 +1,33 @@
+{
+  "name": "gdufe-info-web",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@tsparticles/slim": "^4.0.4",
+    "@tsparticles/vue3": "^4.0.4",
+    "countup.js": "^2.10.0",
+    "lucide-vue-next": "^1.0.0",
+    "pinia": "^3.0.4",
+    "tsparticles": "^4.0.4",
+    "vue": "^3.5.34",
+    "vue-countup-v3": "^1.4.2",
+    "vue-router": "^5.0.7"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.0",
+    "@vitejs/plugin-vue": "^6.0.7",
+    "typescript": "^6.0.3",
+    "vite": "^8.0.13",
+    "vue-tsc": "^3.3.0"
+  }
+}

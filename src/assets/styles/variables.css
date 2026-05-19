@@ -1,0 +1,36 @@
+/* src/assets/styles/variables.css */
+:root {
+  /* 主色板 - 广东财经大学皇家学术紫 */
+  --primary-color: #4A125E; /* 官方皇家紫 */
+  --secondary-color: #2D083B; /* 深邃学术紫 */
+  --accent-color: #5C1D72; /* 活力品牌紫 */
+  --highlight-color: #7B2CBF; /* 科技微光紫 */
+  
+  /* 中性色 */
+  --bg-color: #F8F7FC; /* 页面淡紫白背景 */
+  --bg-card: #FFFFFF; /* 卡片底色 */
+  --text-primary: #1A1A2E; /* 正文主色 */
+  --text-secondary: #6B7280; /* 辅助文字 */
+  --border-color: #E5E7EB;
+  
+  /* 字体 */
+  --font-heading: "HarmonyOS Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-body: "Inter", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-data: "DIN Alternate", "Roboto Mono", monospace;
+
+  /* 阴影 */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-hover: 0 20px 25px -5px rgba(92, 29, 114, 0.12), 0 10px 10px -5px rgba(123, 44, 191, 0.04);
+  
+  /* 边距与宽度 - 全局升级至 1450px 宽屏宏大视野 */
+  --container-width: 1450px;
+  --border-radius: 2px; /* 设为 2px，保持方正硬朗的学术大方风格 */
+  --border-radius-lg: 3px; /* 设为 3px */
+  
+  /* 渐变 */
+  --gradient-hero: linear-gradient(135deg, #2D083B 0%, #4A125E 50%, #7B2CBF 100%);
+  --gradient-footer: linear-gradient(180deg, #2D083B 0%, #15021D 100%);
+}
+
