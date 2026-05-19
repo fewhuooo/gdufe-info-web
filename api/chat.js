@@ -1,6 +1,6 @@
 const DEFAULT_EXTERNAL_CHAT_API_URL = 'https://api.utopiacd.online/api/external/chat';
 
-export default async function handler(req: any, res: any) {
+module.exports = async function handler(req, res) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
     res.status(405).json({ error: 'Method not allowed' });
@@ -53,4 +53,4 @@ export default async function handler(req: any, res: any) {
     console.error('Chat proxy failed:', error);
     res.status(502).json({ error: 'Chat proxy failed' });
   }
-}
+};

@@ -157,6 +157,13 @@ const CHAT_API_URL = (import.meta.env.VITE_CHAT_API_URL as string | undefined) |
 const isClosing = ref(false);
 const isExpanded = ref(false);
 let activeController: AbortController | null = null;
+let typewriterTimer: ReturnType<typeof window.setTimeout> | null = null;
+let typewriterQueue = '';
+let activeTypewriterMessage: Message | null = null;
+let typewriterIdleResolver: (() => void) | null = null;
+
+const TYPEWRITER_INTERVAL_MS = 14;
+const TYPEWRITER_MAX_CHARS_PER_TICK = 3;
 
 const emitClose = () => {
   abortActiveRequest();
@@ -198,6 +205,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   abortActiveRequest();
+  resetTypewriter();
   viewport.value?.removeEventListener('click', handleChatLinkClicks);
   window.removeEventListener('keydown', handleGlobalEsc);
 });
@@ -277,12 +285,12 @@ const formatMessageText = (text: string) => {
 };
 
 // Scroll to viewport bottom
-const scrollToBottom = async () => {
+const scrollToBottom = async (behavior: ScrollBehavior = 'smooth') => {
   await nextTick();
   if (viewport.value) {
     viewport.value.scrollTo({
       top: viewport.value.scrollHeight,
-      behavior: 'smooth'
+      behavior
     });
   }
 };
@@ -294,7 +302,65 @@ const extractChunkText = (payload: any): string => {
 const appendAssistantText = (message: Message, content: string) => {
   if (!content) return;
   message.text += content;
-  void scrollToBottom();
+  void scrollToBottom('auto');
+};
+
+const resolveTypewriterIdle = () => {
+  if (!typewriterIdleResolver) return;
+  typewriterIdleResolver();
+  typewriterIdleResolver = null;
+};
+
+const stepTypewriter = () => {
+  typewriterTimer = null;
+
+  if (!activeTypewriterMessage || typewriterQueue.length === 0) {
+    resolveTypewriterIdle();
+    return;
+  }
+
+  const nextChars = Array.from(typewriterQueue).slice(0, TYPEWRITER_MAX_CHARS_PER_TICK).join('');
+  typewriterQueue = typewriterQueue.slice(nextChars.length);
+  appendAssistantText(activeTypewriterMessage, nextChars);
+
+  typewriterTimer = window.setTimeout(stepTypewriter, TYPEWRITER_INTERVAL_MS);
+};
+
+const enqueueAssistantText = (message: Message, content: string) => {
+  if (!content) return;
+
+  if (activeTypewriterMessage !== message) {
+    typewriterQueue = '';
+    activeTypewriterMessage = message;
+    resolveTypewriterIdle();
+  }
+
+  typewriterQueue += content;
+
+  if (!typewriterTimer) {
+    typewriterTimer = window.setTimeout(stepTypewriter, TYPEWRITER_INTERVAL_MS);
+  }
+};
+
+const waitForTypewriterIdle = () => {
+  if (!typewriterTimer && typewriterQueue.length === 0) {
+    return Promise.resolve();
+  }
+
+  return new Promise<void>(resolve => {
+    typewriterIdleResolver = resolve;
+  });
+};
+
+const resetTypewriter = () => {
+  if (typewriterTimer) {
+    window.clearTimeout(typewriterTimer);
+    typewriterTimer = null;
+  }
+
+  typewriterQueue = '';
+  activeTypewriterMessage = null;
+  resolveTypewriterIdle();
 };
 
 const processSseLine = (line: string, assistantMessage: Message) => {
@@ -306,9 +372,9 @@ const processSseLine = (line: string, assistantMessage: Message) => {
   if (data === '[DONE]') return true;
 
   try {
-    appendAssistantText(assistantMessage, extractChunkText(JSON.parse(data)));
+    enqueueAssistantText(assistantMessage, extractChunkText(JSON.parse(data)));
   } catch {
-    appendAssistantText(assistantMessage, data);
+    enqueueAssistantText(assistantMessage, data);
   }
 
   return false;
@@ -317,6 +383,7 @@ const processSseLine = (line: string, assistantMessage: Message) => {
 const requestStreamingAnswer = async (query: string) => {
   const controller = new AbortController();
   activeController = controller;
+  resetTypewriter();
   isThinking.value = true;
 
   try {
@@ -350,7 +417,8 @@ const requestStreamingAnswer = async (query: string) => {
     const contentType = response.headers.get('content-type') || '';
     if (contentType.includes('application/json')) {
       const payload = await response.json();
-      assistantMessage.text = extractChunkText(payload) || '知识库服务暂未返回可展示的回答。';
+      enqueueAssistantText(assistantMessage, extractChunkText(payload) || '知识库服务暂未返回可展示的回答。');
+      await waitForTypewriterIdle();
       await scrollToBottom();
       return;
     }
@@ -386,9 +454,12 @@ const requestStreamingAnswer = async (query: string) => {
       processSseLine(buffer, assistantMessage);
     }
 
+    await waitForTypewriterIdle();
+
     if (!assistantMessage.text.trim()) {
       assistantMessage.text = '知识库服务暂未返回可展示的回答。';
     }
+
     await scrollToBottom();
   } catch (error) {
     if (controller.signal.aborted) return;
@@ -413,6 +484,7 @@ const abortActiveRequest = () => {
     activeController.abort();
     activeController = null;
   }
+  resetTypewriter();
   isThinking.value = false;
   isStreaming.value = false;
 };
