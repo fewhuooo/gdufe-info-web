@@ -58,9 +58,9 @@
                       <div class="dropdown-group-title">{{ sub.title }}</div>
                       <ul>
                         <li v-for="subLink in sub.items" :key="subLink.name">
-                          <router-link :to="subLink.path" class="dropdown-item-link">
+                          <a :href="subLink.path" class="dropdown-item-link" @click.prevent="navigateToHash(subLink.path)">
                             {{ subLink.name }}
-                          </router-link>
+                          </a>
                         </li>
                       </ul>
                     </div>
@@ -87,32 +87,12 @@
       </div>
     </div>
 
-    <!-- 全局全屏搜索覆盖层 -->
+    <!-- 全局全屏搜索覆盖层 -> 已重构为 Gemini 手机版 AI 助手界面 -->
     <transition name="fade">
-      <div v-if="showSearch" class="search-overlay">
-        <button class="close-search" @click="showSearch = false">
-          <X :size="32" />
-        </button>
-        <div class="search-modal-content">
-          <div class="search-input-wrapper">
-            <Search :size="24" class="search-modal-icon" />
-            <input 
-              type="text" 
-              v-model="searchQuery" 
-              placeholder="请输入搜索关键词，如：培养方案、张教授、研究生招生..." 
-              @keyup.enter="handleSearch"
-              ref="searchInput"
-            />
-          </div>
-          
-          <div class="search-hot-keys">
-            <span>热门搜索：</span>
-            <button v-for="tag in hotTags" :key="tag" @click="searchTag(tag)">
-              {{ tag }}
-            </button>
-          </div>
-        </div>
-      </div>
+      <GeminiChatOverlay 
+        v-if="showSearch" 
+        @close="showSearch = false" 
+      />
     </transition>
 
     <!-- 全屏极简全站导航大菜单 (Full Screen Navigation Overlay) -->
@@ -163,9 +143,9 @@
                         <h3 class="sub-group-label">{{ sub.title }}</h3>
                         <ul class="sub-links-list">
                           <li v-for="subLink in sub.items" :key="subLink.name">
-                            <router-link :to="subLink.path" class="sub-item-link" @click="isHamburgerOpen = false">
+                            <a :href="subLink.path" class="sub-item-link" @click.prevent="navigateToHash(subLink.path)">
                               {{ subLink.name }}
-                            </router-link>
+                            </a>
                           </li>
                         </ul>
                       </div>
@@ -194,7 +174,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, nextTick, watch } from "vue";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import { 
   Search, 
   ChevronDown, 
@@ -202,15 +182,33 @@ import {
   MessageCircle,
   Menu
 } from "lucide-vue-next";
+import GeminiChatOverlay from "./GeminiChatOverlay.vue";
 
 // 路由与状态管理
 const route = useRoute();
+const router = useRouter();
 const isScrolled = ref(false);
 const showSearch = ref(false);
-const searchQuery = ref("");
 const isHamburgerOpen = ref(false);
 const hoveredItemIndex = ref(0);
 const activeSubMenu = ref<any>(null);
+
+// Navigate to a path with optional hash, handling same-page hash scroll
+const navigateToHash = (path: string) => {
+  isHamburgerOpen.value = false;
+  const [rawPath, hash] = path.split("#");
+  const targetPath = rawPath || "/";
+
+  if (route.path === targetPath && hash) {
+    // Same page: manually scroll to anchor
+    const el = document.getElementById(hash);
+    if (el) {
+      window.scrollTo({ top: el.offsetTop - 90, behavior: "smooth" });
+    }
+  } else {
+    router.push(path);
+  }
+};
 
 // 移动端/平板专属抽屉与折叠面板状态
 const isMobileOrTablet = ref(false);
@@ -231,127 +229,121 @@ const hotTags = ["人工智能专业", "师资队伍", "研究生招生调剂", 
 // 导航数据结构
 const navItems = [
   { name: "首页", path: "/" },
-  { 
-    name: "学院概况", 
+  {
+    name: "学院概况",
     path: "/about",
     intro: "关于我们，展示学院的底蕴与风采。",
     subMenu: [
       {
         title: "认识学院",
         items: [
-          { name: "学院简介", path: "/about" },
-          { name: "领导班子", path: "/about#leadership" },
-          { name: "组织机构", path: "/about#organs" },
-          { name: "学院风采", path: "/about#glance" }
+          { name: "学院简介", path: "/about#intro" },
+          { name: "学院风采", path: "/showcase" },
+          { name: "学科建设", path: "/about#discipline" },
+          { name: "科研平台", path: "/about#platform" }
         ]
       },
       {
-        title: "人才团队",
+        title: "人才队伍",
         items: [
-          { name: "师资队伍", path: "/about#faculty-list" }
+          { name: "师资队伍", path: "/about#faculty" },
+          { name: "科研成果", path: "/about#research" },
+          { name: "人才培养", path: "/about#talent" },
+          { name: "领导班子", path: "/about#leadership" }
         ]
       }
     ]
   },
-  { 
-    name: "人才培养", 
+  {
+    name: "新闻公告",
+    path: "/news",
+    intro: "发布学院最新动态、学术讲座与各类通知公告。",
+    subMenu: [
+      {
+        title: "分类导航",
+        items: [
+          { name: "学院头条", path: "/news#headlines" },
+          { name: "讲座预告", path: "/news#lectures" },
+          { name: "通知公告", path: "/news#notices" },
+          { name: "学术信息", path: "/news#academic" }
+        ]
+      }
+    ]
+  },
+  {
+    name: "人才培养",
     path: "/education",
     intro: "致力于培养具有创新精神的复合型人工智能与大数据人才。",
     subMenu: [
       {
-        title: "本科生培养",
+        title: "本科教育",
         items: [
-          { name: "专业介绍", path: "/education" },
+          { name: "专业建设", path: "/education#majors" },
           { name: "培养方案", path: "/education#scheme" },
-          { name: "课程建设", path: "/education#course" }
-        ]
-      },
-      {
-        title: "研究生教育",
-        items: [
-          { name: "招生信息", path: "/education#admission" },
-          { name: "导师信息", path: "/education#advisors" }
-        ]
-      },
-      {
-        title: "教学资源",
-        items: [
+          { name: "课程建设", path: "/education#course" },
           { name: "实验室建设", path: "/education#labs" }
         ]
       }
     ]
   },
-  { 
-    name: "学科科研", 
+  {
+    name: "学科科研",
     path: "/research",
     intro: "深耕学术前沿，服务地方数字经济腾飞。",
     subMenu: [
       {
-        title: "学术研究",
+        title: "学科与科研",
         items: [
-          { name: "学科建设", path: "/research" },
-          { name: "学术成果", path: "/research#achievements" },
-          { name: "科研项目", path: "/research#projects" }
-        ]
-      },
-      {
-        title: "研究载体",
-        items: [
-          { name: "科研平台", path: "/research#platforms" },
-          { name: "国际会议", path: "/research#conferences" }
+          { name: "学科建设", path: "/research#disciplines" },
+          { name: "学术科研", path: "/research#research" },
+          { name: "管理办法", path: "/research#regulations" },
+          { name: "国际学术会议", path: "/research#conference" }
         ]
       }
     ]
   },
-  { 
-    name: "党建工作", 
+  {
+    name: "党建工作",
     path: "/party",
     intro: "红心向党，筑牢新时代高校基石。",
     subMenu: [
       {
         title: "学院党建",
         items: [
-          { name: "党建动态", path: "/party" },
-          { name: "支部风采", path: "/party#branch" },
-          { name: "教育培训", path: "/party#education" },
-          { name: "在线学习", path: "/party#learning" }
+          { name: "思想领航", path: "/party#thought" },
+          { name: "支部风采", path: "/party#branches" },
+          { name: "教育培训", path: "/party#trainings" }
         ]
       }
     ]
   },
-  { 
-    name: "学生天地", 
+  {
+    name: "学生工作",
     path: "/students",
     intro: "激扬青春，探索无限创意的第二课堂。",
     subMenu: [
       {
-        title: "学生活动",
+        title: "学生工作",
         items: [
-          { name: "团学活动", path: "/students" },
-          { name: "竞赛获奖", path: "/students#awards" },
-          { name: "心理健康", path: "/students#mental" },
-          { name: "校友风采", path: "/students#alumni" }
+          { name: "团学活动", path: "/students#activities" },
+          { name: "学术科研", path: "/students#academic" },
+          { name: "奖助贷工作", path: "/students#scholarship" },
+          { name: "心理健康", path: "/students#mentalhealth" }
         ]
       }
     ]
   },
-  { 
-    name: "招生就业", 
+  {
+    name: "招生就业",
     path: "/admission",
     intro: "欢迎报考大数据与人工智能学院，筑梦起航！",
     subMenu: [
       {
-        title: "招生服务",
+        title: "招生就业",
         items: [
-          { name: "本科招生", path: "/admission" },
-          { name: "研究生招生", path: "/admission#graduate" }
-        ]
-      },
-      {
-        title: "生涯就业",
-        items: [
-          { name: "就业指导", path: "/admission#career" },
-          { name: "招聘信息", path: "/admission#jobs" }
+          { name: "招生工作", path: "/admission#enrollment" },
+          { name: "就业工作", path: "/admission#career" },
+          { name: "招聘信息", path: "/admission#recruitment" }
         ]
       }
     ]
@@ -382,19 +374,7 @@ const toggleMobileMenu = () => {
   alert("导航栏主菜单 Drawer 打开中...");
 };
 
-// 搜索栏逻辑
-const handleSearch = () => {
-  if (searchQuery.value.trim()) {
-    alert(`全站搜索: "${searchQuery.value}"`);
-    showSearch.value = false;
-    searchQuery.value = "";
-  }
-};
 
-const searchTag = (tag: string) => {
-  searchQuery.value = tag;
-  nextTick(() => handleSearch());
-};
 
 
 
@@ -409,14 +389,9 @@ const handlePageScroll = (e: Event) => {
   isScrolled.value = customEvent.detail > 0;
 };
 
-// 聚焦搜索框
-const searchInput = ref<HTMLInputElement | null>(null);
 watch(showSearch, (val) => {
   if (val) {
     document.body.style.overflow = "hidden";
-    setTimeout(() => {
-      searchInput.value?.focus();
-    }, 100);
   } else {
     document.body.style.overflow = "";
   }

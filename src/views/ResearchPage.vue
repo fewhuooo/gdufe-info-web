@@ -3,10 +3,14 @@
     <!-- 头部横幅 Banner -->
     <div class="sub-banner">
       <div class="container banner-inner">
-        <h1 class="banner-title">学科科研 <span>/ RESEARCH</span></h1>
-        <p class="banner-desc">探求真理，攻坚前沿 · 大数据与智能计算的学术高峰</p>
-        <div class="breadcrumb">
-          <router-link to="/">首页</router-link> <span>/</span> <span class="active">学科科研</span>
+        <div class="banner-left">
+          <h1 class="banner-title">学科科研 <span>/ RESEARCH</span></h1>
+          <p class="banner-desc">深耕学术前沿 · 服务数字经济腾飞</p>
+        </div>
+        <div class="banner-right">
+          <div class="breadcrumb">
+            <router-link to="/">首页</router-link> <span>/</span> <span class="active">学科科研</span>
+          </div>
         </div>
       </div>
       <div class="banner-pattern"></div>
@@ -19,8 +23,8 @@
           <h3 class="sidebar-title">学科科研</h3>
           <ul>
             <li v-for="menu in subMenus" :key="menu.id">
-              <button 
-                @click="scrollToAnchor(menu.id)" 
+              <button
+                @click="scrollToAnchor(menu.id)"
                 :class="{ active: activeSection === menu.id }"
               >
                 {{ menu.label }}
@@ -32,93 +36,66 @@
 
       <!-- 右侧：详细内容面板 -->
       <main class="content-pane">
-        <!-- 学科体系 Section -->
+        <!-- 学科建设 Section -->
         <section id="disciplines" class="info-section scroll-anchor">
-          <h3 class="pane-section-title">学科体系</h3>
-          <div class="discipline-content">
-            <p class="emphasized">
-              学院拥有“计算机科学与技术”一级学科硕士学位授权点、“大数据商业智能”二级学科硕士学位授权点以及“电子信息”专业硕士授权领域，已形成了“大数据建模-智能算法开发-网络安全治理”三位一体的立体化学科链条。
+          <h3 class="pane-section-title">学科建设</h3>
+          <div class="intro-box">
+            <p>
+              学院构建"五位一体"的学科建设新模式，交叉特色鲜明。拥有"数字经济"博士学位授权点，为高层次人才培养提供了坚实支撑。设有"智能科学与技术"（全国财经类院校唯一、广东省首批）和"管理科学与工程"2个一级学科硕士学位授权点，"技术经济及管理"二级学科硕士学位授权点，以及计算机技术、图书情报（广东省唯二）2个专业硕士学位授权点，构建了以"新工科+新商科"深度融合为特色的育人体系。
             </p>
-            <div class="discipline-grid">
-              <div class="disc-card">
-                <div class="disc-number">01</div>
-                <h4>智能信息处理与算法</h4>
-                <p>深耕机器视觉、大规模自然语言生成、多模态智能表征以及神经架构搜索（NAS）。</p>
+          </div>
+          <div class="discipline-grid">
+            <div v-for="disc in disciplineList" :key="disc.name" class="disc-card">
+              <div class="disc-header">
+                <span class="disc-code">{{ disc.code }}</span>
+                <span class="disc-type" :class="disc.typeClass">{{ disc.type }}</span>
               </div>
-              <div class="disc-card">
-                <div class="disc-number">02</div>
-                <h4>大数据与计算智能</h4>
-                <p>聚焦高维海量数据存储管理、分布式计算架构（Spark/Flink）、图数据库表示学习及隐私合规分析。</p>
-              </div>
-              <div class="disc-card">
-                <div class="disc-number">03</div>
-                <h4>网络空间与密码安全</h4>
-                <p>研究端到端高强密码防护体系、数据隐私防泄露脱敏、区块链信任合规安全共识算法等关键工程问题。</p>
-              </div>
+              <h4>{{ disc.name }}</h4>
+              <p>{{ disc.desc }}</p>
             </div>
           </div>
         </section>
 
-        <!-- 学术成就 Section -->
-        <section id="outputs" class="info-section scroll-anchor">
-          <h3 class="pane-section-title">学术成就与论文发表</h3>
-          <div class="outputs-stats">
-            <div class="stat-card">
-              <span class="num">200+</span>
-              <span class="lbl">SCI/EI高水平论文</span>
+        <!-- 学术科研 Section -->
+        <section id="research" class="info-section scroll-anchor">
+          <h3 class="pane-section-title">学术科研</h3>
+          <div class="article-list">
+            <div v-for="(article, idx) in researchArticles" :key="idx" class="article-item">
+              <span class="article-date">{{ article.date }}</span>
+              <a href="#" class="article-title-link" @click.prevent>{{ article.title }}</a>
             </div>
-            <div class="stat-card">
-              <span class="num">15+</span>
-              <span class="lbl">国家级基金立项</span>
-            </div>
-            <div class="stat-card">
-              <span class="num">30+</span>
-              <span class="lbl">发明专利授权</span>
-            </div>
-            <div class="stat-card">
-              <span class="num">1200万</span>
-              <span class="lbl">年均到账科研经费</span>
-            </div>
-          </div>
-
-          <div class="recent-papers">
-            <h4>代表性学术成果 (Representative Publications)</h4>
-            <ul class="paper-list">
-              <li>
-                <span class="paper-year">2026</span>
-                <div class="paper-detail">
-                  <p class="paper-title">"Cross-Modal Fusion and Regularization for Sparse Heterogeneous Data Mining"</p>
-                  <p class="paper-author">张晓华(通讯作者), 李博士. <strong>IEEE Transactions on Cybernetics</strong> (IF: 11.8)</p>
-                </div>
-              </li>
-              <li>
-                <span class="paper-year">2025</span>
-                <div class="paper-detail">
-                  <p class="paper-title">"Privacy-Preserving Multi-Party Decentralized Machine Learning Over Blockchain"</p>
-                  <p class="paper-author">孙德胜(第一作者), 陈博士. <strong>IEEE Transactions on Information Forensics and Security</strong> (IF: 7.2)</p>
-                </div>
-              </li>
-            </ul>
           </div>
         </section>
 
-        <!-- 科研平台 Section -->
-        <section id="platforms" class="info-section scroll-anchor">
-          <h3 class="pane-section-title">核心科研载体</h3>
-          <div class="platforms-list">
-            <div class="platform-item">
-              <div class="plat-badge">省级</div>
-              <div class="plat-info">
-                <h4>广东省大数据与商业智能工程技术研究中心</h4>
-                <p>省级重点平台。聚焦粤港澳大湾区现代服务业数字化建设，打通从复杂异构数据源接入到商业智能挖掘的全栈技术链条。</p>
+        <!-- 管理办法 Section -->
+        <section id="regulations" class="info-section scroll-anchor">
+          <h3 class="pane-section-title">管理办法</h3>
+          <div class="regulation-intro">
+            <p>为规范学院科研管理，促进学术健康发展，根据国家和学校相关制度，结合学院实际，制定以下管理办法。</p>
+          </div>
+          <div class="regulation-list">
+            <div v-for="(reg, idx) in regulations" :key="idx" class="regulation-item">
+              <span class="reg-icon">📋</span>
+              <div class="reg-content">
+                <a href="#" class="reg-title" @click.prevent>{{ reg.title }}</a>
+                <span class="reg-dept">{{ reg.dept }}</span>
               </div>
+              <span class="reg-date">{{ reg.date }}</span>
             </div>
-            <div class="platform-item">
-              <div class="plat-badge">校企共建</div>
-              <div class="plat-info">
-                <h4>生成式人工智能校企融合创新中心 (联合腾讯云)</h4>
-                <p>面向新一代AI基础理论，深度合作GPU大规模分布式调度算法、垂直领域大模型参数微调及企业数字资产安全治理。</p>
+          </div>
+        </section>
+
+        <!-- 国际学术会议 Section -->
+        <section id="conference" class="info-section scroll-anchor">
+          <h3 class="pane-section-title">国际学术会议</h3>
+          <div class="conference-list">
+            <div v-for="(conf, idx) in conferences" :key="idx" class="conference-card">
+              <div class="conference-header">
+                <span class="conference-badge">{{ conf.status }}</span>
+                <span class="conference-date">{{ conf.date }}</span>
               </div>
+              <h4 class="conference-title">{{ conf.title }}</h4>
+              <p class="conference-desc">{{ conf.desc }}</p>
             </div>
           </div>
         </section>
@@ -133,9 +110,85 @@ import { ref, onMounted, onUnmounted } from "vue";
 const activeSection = ref("disciplines");
 
 const subMenus = [
-  { id: "disciplines", label: "学科体系" },
-  { id: "outputs", label: "学术成就" },
-  { id: "platforms", label: "核心科研载体" }
+  { id: "disciplines", label: "学科建设" },
+  { id: "research", label: "学术科研" },
+  { id: "regulations", label: "管理办法" },
+  { id: "conference", label: "国际学术会议" }
+];
+
+const disciplineList = [
+  {
+    code: "140500",
+    name: "智能科学与技术",
+    type: "一级学科硕士点",
+    typeClass: "type-master",
+    desc: "全国财经类院校唯一、广东省首批一级学科硕士学位授权点，聚焦人工智能基础理论、智能信息处理与算法、大数据与计算智能等前沿方向。"
+  },
+  {
+    code: "120100",
+    name: "管理科学与工程",
+    type: "一级学科硕士点",
+    typeClass: "type-master",
+    desc: "以管理科学理论为基础，融合信息技术与数据科学方法，研究管理决策优化、信息系统与商务智能等方向。"
+  },
+  {
+    code: "120204",
+    name: "技术经济及管理",
+    type: "二级学科硕士点",
+    typeClass: "type-sub",
+    desc: "研究技术进步与经济发展之间的关系，聚焦技术创新管理、项目评估与投资决策、数字经济治理等领域。"
+  },
+  {
+    code: "085404",
+    name: "计算机技术",
+    type: "专业硕士点",
+    typeClass: "type-prof",
+    desc: "面向信息技术产业需求，培养掌握计算机系统开发与应用的高层次应用型人才，涵盖软件工程、网络与信息安全、人工智能应用等方向。"
+  },
+  {
+    code: "125500",
+    name: "图书情报",
+    type: "专业硕士点",
+    typeClass: "type-prof",
+    desc: "广东省唯二图书情报专业硕士学位授权点，聚焦数字图书馆、信息资源管理、数据治理与知识服务等领域。"
+  }
+];
+
+const researchArticles = [
+  { title: "我院举办'大型语言模型的双面性：网络安全视角下的利和弊'专题学术报告会", date: "2025-11-11" },
+  { title: "我院举办'图神经网络及其在网络安全领域的应用'学术讲座", date: "2025-10-22" },
+  { title: "学院召开2025年度国家自然科学基金申报动员会", date: "2025-01-10" },
+  { title: "我院教师在IEEE Transactions系列期刊发表多篇高水平论文", date: "2024-12-20" },
+  { title: "我院获批广东省自然科学基金项目2项", date: "2024-11-15" },
+  { title: "我院研究生在ACM国际会议上获最佳论文提名", date: "2024-10-08" },
+  { title: "学院与华为签署联合实验室共建协议", date: "2024-09-28" },
+  { title: "我院教师团队获广东省计算机学会优秀论文奖", date: "2024-06-15" },
+  { title: "我院举办'大数据与人工智能前沿'学术研讨会", date: "2023-12-10" },
+  { title: "学院获批国家自然科学基金面上项目3项", date: "2023-09-15" },
+  { title: "广州大学彭济根教授应邀到我校作学术报告", date: "2021-11-01" }
+];
+
+const regulations = [
+  { title: "广东财经大学科研成果管理办法", dept: "科研处", date: "2024-03-15" },
+  { title: "广东财经大学纵向科研项目管理办法", dept: "科研处", date: "2024-03-15" },
+  { title: "广东财经大学横向科研项目管理办法", dept: "科研处", date: "2024-03-15" },
+  { title: "大数据与人工智能学院学术委员会工作规程", dept: "学院", date: "2023-09-01" },
+  { title: "大数据与人工智能学院研究生科研成果认定标准", dept: "学院", date: "2023-09-01" }
+];
+
+const conferences = [
+  {
+    title: "The 3rd International Conference on Advances and Applications of Machine Learning (WAAML 2025)",
+    date: "2025-09-21",
+    desc: "第三届机器学习进展及应用国际学术会议，由广东财经大学大数据与人工智能学院主办，聚焦机器学习前沿理论与应用，邀请国内外知名学者做主题报告。",
+    status: "会议通知已发布"
+  },
+  {
+    title: "The 3rd International Workshop on Advances and Applications of Machine Learning (WAAML 2025 Workshop)",
+    date: "2025-09-21",
+    desc: "第三届机器学习进展及应用国际研讨会，WAAML 2025现面向全球征集学术论文，涵盖深度学习、强化学习、联邦学习等方向。",
+    status: "征文进行中"
+  }
 ];
 
 const scrollToAnchor = (id: string) => {
@@ -146,7 +199,7 @@ const scrollToAnchor = (id: string) => {
     const elementRect = el.getBoundingClientRect().top;
     const elementPosition = elementRect - bodyRect;
     const offsetPosition = elementPosition - offset;
-    
+
     window.scrollTo({
       top: offsetPosition,
       behavior: "smooth"
@@ -156,7 +209,7 @@ const scrollToAnchor = (id: string) => {
 
 const handleScroll = () => {
   const scrollPosition = window.scrollY + 140;
-  
+
   for (const menu of subMenus) {
     const el = document.getElementById(menu.id);
     if (el) {
@@ -190,7 +243,9 @@ onUnmounted(() => {
 /* 子页横幅 Banner */
 .sub-banner {
   height: 280px;
-  background: var(--gradient-hero);
+  background-image: url('@/assets/images/subpage_banner_bg.png');
+  background-size: cover;
+  background-position: center;
   position: relative;
   display: flex;
   align-items: center;
@@ -201,6 +256,21 @@ onUnmounted(() => {
 .banner-inner {
   position: relative;
   z-index: 2;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.banner-left {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.banner-right {
+  display: flex;
+  align-items: center;
 }
 
 .banner-title {
@@ -208,30 +278,36 @@ onUnmounted(() => {
   font-size: 2.25rem;
   font-weight: 800;
   letter-spacing: 2px;
-  display: flex;
-  align-items: baseline;
+  display: inline;
   gap: 12px;
+  color: #fff;
+  text-shadow: -1px -1px 0 rgba(0,0,0,0.3), 1px -1px 0 rgba(0,0,0,0.3), -1px 1px 0 rgba(0,0,0,0.3), 1px 1px 0 rgba(0,0,0,0.3);
 }
 
 .banner-title span {
   font-size: 1.1rem;
-  opacity: 0.7;
+  opacity: 0.9;
   font-weight: 400;
+  color: #fff;
+  text-shadow: -1px -1px 0 rgba(0,0,0,0.3), 1px -1px 0 rgba(0,0,0,0.3), -1px 1px 0 rgba(0,0,0,0.3), 1px 1px 0 rgba(0,0,0,0.3);
 }
 
 .banner-desc {
   font-size: 1rem;
-  opacity: 0.9;
+  opacity: 0.95;
   letter-spacing: 4px;
   margin-top: 8px;
-  margin-bottom: 24px;
+  margin-bottom: 0;
+  color: #fff;
+  text-shadow: -1px -1px 0 rgba(0,0,0,0.3), 1px -1px 0 rgba(0,0,0,0.3), -1px 1px 0 rgba(0,0,0,0.3), 1px 1px 0 rgba(0,0,0,0.3);
 }
 
 .breadcrumb {
   font-size: 0.85rem;
   display: flex;
   gap: 8px;
-  opacity: 0.85;
+  opacity: 1;
+  color: white;
 }
 
 .breadcrumb a {
@@ -245,7 +321,8 @@ onUnmounted(() => {
 }
 
 .breadcrumb span.active {
-  color: var(--accent-color);
+  color: #fff;
+  text-shadow: -1px -1px 0 rgba(0,0,0,0.3), 1px -1px 0 rgba(0,0,0,0.3), -1px 1px 0 rgba(0,0,0,0.3), 1px 1px 0 rgba(0,0,0,0.3);
   font-weight: 600;
 }
 
@@ -285,11 +362,6 @@ onUnmounted(() => {
   padding-bottom: 12px;
 }
 
-.dark .sidebar-title {
-  color: white;
-  border-bottom-color: var(--highlight-color);
-}
-
 .sidebar-menu ul {
   display: flex;
   flex-direction: column;
@@ -323,12 +395,6 @@ onUnmounted(() => {
   font-weight: 700;
 }
 
-.dark .sidebar-menu button.active {
-  background-color: rgba(0, 174, 239, 0.08);
-  color: var(--highlight-color);
-  border-left-color: var(--highlight-color);
-}
-
 /* 右侧内容 */
 .content-pane {
   display: flex;
@@ -346,29 +412,26 @@ onUnmounted(() => {
   margin-bottom: 24px;
 }
 
-.dark .pane-section-title {
-  color: white;
-}
-
-.discipline-content p.emphasized {
-  font-size: 1.05rem;
-  line-height: 1.7;
-  color: var(--primary-color);
+/* 简介 */
+.intro-box {
   background-color: var(--bg-card);
-  padding: 24px;
+  padding: 36px;
   border-radius: var(--border-radius-lg);
   border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
   margin-bottom: 28px;
 }
 
-.dark .discipline-content p.emphasized {
-  color: var(--highlight-color);
+.intro-box p {
+  font-size: 0.95rem;
+  line-height: 1.8;
+  color: var(--text-primary);
 }
 
-/* 学科网格 */
+/* 学科建设卡片 */
 .discipline-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 20px;
 }
 
@@ -378,19 +441,49 @@ onUnmounted(() => {
   border-radius: var(--border-radius-lg);
   padding: 24px;
   box-shadow: var(--shadow-sm);
-  position: relative;
+  transition: transform 0.3s, box-shadow 0.3s;
 }
 
-.disc-number {
-  font-family: var(--font-data);
-  font-size: 2rem;
-  font-weight: 800;
-  color: rgba(26, 92, 175, 0.15);
+.disc-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md);
+}
+
+.disc-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   margin-bottom: 12px;
 }
 
-.dark .disc-number {
-  color: rgba(255, 255, 255, 0.1);
+.disc-code {
+  font-family: var(--font-data);
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--accent-color);
+  background: rgba(26, 92, 175, 0.06);
+  padding: 2px 10px;
+  border-radius: 4px;
+}
+
+.disc-type {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 10px;
+  color: white;
+}
+
+.type-master {
+  background: var(--primary-color);
+}
+
+.type-sub {
+  background: #6b7280;
+}
+
+.type-prof {
+  background: var(--accent-color);
 }
 
 .disc-card h4 {
@@ -401,166 +494,203 @@ onUnmounted(() => {
   margin-bottom: 8px;
 }
 
-.dark .disc-card h4 {
-  color: white;
-}
-
 .disc-card p {
   font-size: 0.85rem;
   color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+/* 学术科研文章列表 */
+.article-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+
+.article-item {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--border-color);
+  transition: background-color 0.3s;
+}
+
+.article-item:last-child {
+  border-bottom: none;
+}
+
+.article-item:hover {
+  background-color: rgba(26, 92, 175, 0.03);
+}
+
+.article-date {
+  font-family: var(--font-data);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--accent-color);
+  flex-shrink: 0;
+  width: 90px;
+}
+
+.article-title-link {
+  font-size: 0.95rem;
+  color: var(--text-primary);
+  text-decoration: none;
+  transition: color 0.3s;
   line-height: 1.5;
 }
 
-/* 学术成果统计 */
-.outputs-stats {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 20px;
-  margin-bottom: 36px;
+.article-title-link:hover {
+  color: var(--primary-color);
+  text-decoration: underline;
 }
 
-.stat-card {
-  background-color: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius-lg);
-  padding: 24px 16px;
-  text-align: center;
-  box-shadow: var(--shadow-sm);
-}
-
-.stat-card .num {
-  font-family: var(--font-data);
-  font-size: 2.2rem;
-  font-weight: 700;
-  color: var(--secondary-color);
-  display: block;
-}
-
-.dark .stat-card .num {
-  color: var(--highlight-color);
-}
-
-.stat-card .lbl {
-  font-size: 0.8rem;
-  color: var(--text-secondary);
-  margin-top: 4px;
-  display: block;
-}
-
-/* 代表作列表 */
-.recent-papers {
-  background-color: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius-lg);
-  padding: 30px;
-  box-shadow: var(--shadow-sm);
-}
-
-.recent-papers h4 {
-  font-family: var(--font-heading);
-  font-size: 1.15rem;
-  font-weight: 700;
-  color: var(--secondary-color);
+/* 管理办法 */
+.regulation-intro {
   margin-bottom: 20px;
-  border-bottom: 1px dashed var(--border-color);
-  padding-bottom: 10px;
 }
 
-.dark .recent-papers h4 {
-  color: white;
+.regulation-intro p {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  line-height: 1.7;
 }
 
-.paper-list {
+.regulation-list {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 0;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
 }
 
-.paper-list li {
+.regulation-item {
   display: flex;
-  gap: 20px;
-  align-items: flex-start;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border-color);
+  transition: background-color 0.3s;
 }
 
-.paper-year {
-  font-family: var(--font-data);
-  font-size: 1.1rem;
-  font-weight: 800;
-  color: var(--accent-color);
-  background-color: rgba(200, 168, 78, 0.1);
-  padding: 4px 12px;
-  border-radius: 4px;
+.regulation-item:last-child {
+  border-bottom: none;
+}
+
+.regulation-item:hover {
+  background-color: rgba(26, 92, 175, 0.03);
+}
+
+.reg-icon {
+  font-size: 1.2rem;
   flex-shrink: 0;
 }
 
-.paper-detail p {
+.reg-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.reg-title {
+  font-size: 0.95rem;
+  color: var(--text-primary);
+  text-decoration: none;
+  transition: color 0.3s;
   line-height: 1.5;
 }
 
-.paper-title {
-  font-size: 0.95rem;
+.reg-title:hover {
+  color: var(--primary-color);
+  text-decoration: underline;
+}
+
+.reg-dept {
+  font-size: 0.75rem;
+  color: var(--accent-color);
+  background: rgba(26, 92, 175, 0.06);
+  padding: 2px 8px;
+  border-radius: 4px;
   font-weight: 600;
-  color: var(--text-primary);
+  flex-shrink: 0;
 }
 
-.paper-author {
-  font-size: 0.8rem;
+.reg-date {
+  font-family: var(--font-data);
+  font-size: 0.82rem;
   color: var(--text-secondary);
-  margin-top: 4px;
+  flex-shrink: 0;
 }
 
-/* 科研载体 */
-.platforms-list {
+/* 国际学术会议 */
+.conference-list {
   display: flex;
   flex-direction: column;
   gap: 20px;
 }
 
-.platform-item {
-  display: grid;
-  grid-template-columns: 120px 1fr;
-  gap: 24px;
-  padding: 24px;
+.conference-card {
   background-color: var(--bg-card);
-  border-radius: var(--border-radius-lg);
   border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-lg);
+  padding: 28px;
   box-shadow: var(--shadow-sm);
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.conference-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md);
+}
+
+.conference-header {
+  display: flex;
+  justify-content: space-between;
   align-items: center;
+  margin-bottom: 16px;
 }
 
-.plat-badge {
-  background-color: rgba(26, 92, 175, 0.08);
-  color: var(--primary-color);
+.conference-badge {
+  display: inline-block;
+  font-size: 0.75rem;
   font-weight: 700;
+  color: white;
+  background: var(--primary-color);
+  padding: 4px 12px;
+  border-radius: 12px;
+}
+
+.conference-date {
+  font-family: var(--font-data);
   font-size: 0.85rem;
-  padding: 8px 12px;
-  border-radius: 4px;
-  text-align: center;
-  border: 1px solid rgba(26, 92, 175, 0.15);
+  color: var(--text-secondary);
+  font-weight: 600;
 }
 
-.platform-item:last-child .plat-badge {
-  background-color: rgba(200, 168, 78, 0.1);
-  color: var(--accent-color);
-  border-color: rgba(200, 168, 78, 0.2);
-}
-
-.plat-info h4 {
+.conference-title {
   font-family: var(--font-heading);
   font-size: 1.1rem;
   font-weight: 700;
   color: var(--secondary-color);
-  margin-bottom: 6px;
+  margin-bottom: 10px;
+  line-height: 1.5;
 }
 
-.dark .plat-info h4 {
-  color: white;
-}
-
-.plat-info p {
-  font-size: 0.875rem;
+.conference-desc {
+  font-size: 0.9rem;
   color: var(--text-secondary);
-  line-height: 1.6;
+  line-height: 1.7;
 }
 
 @media (max-width: 900px) {
@@ -571,17 +701,26 @@ onUnmounted(() => {
   .sidebar-menu {
     display: none;
   }
-  .discipline-grid, .outputs-stats {
+  .discipline-grid {
     grid-template-columns: 1fr;
   }
-  .platform-item {
-    grid-template-columns: 1fr;
-    gap: 16px;
-    text-align: center;
+  .article-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
   }
-  .plat-badge {
-    width: max-content;
-    margin: 0 auto;
+  .reg-content {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+  .regulation-item {
+    flex-wrap: wrap;
+  }
+  .conference-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
   }
 }
 </style>

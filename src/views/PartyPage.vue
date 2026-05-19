@@ -160,7 +160,9 @@ onUnmounted(() => {
 /* 子页横幅 Banner */
 .sub-banner {
   height: 280px;
-  background: var(--gradient-hero);
+  background-image: url('@/assets/images/subpage_banner_bg.png');
+  background-size: cover;
+  background-position: center;
   position: relative;
   display: flex;
   align-items: center;
@@ -171,6 +173,21 @@ onUnmounted(() => {
 .banner-inner {
   position: relative;
   z-index: 2;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.banner-left {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.banner-right {
+  display: flex;
+  align-items: center;
 }
 
 .banner-title {
@@ -178,30 +195,36 @@ onUnmounted(() => {
   font-size: 2.25rem;
   font-weight: 800;
   letter-spacing: 2px;
-  display: flex;
-  align-items: baseline;
+  display: inline;
   gap: 12px;
+  color: #fff;
+  text-shadow: -1px -1px 0 rgba(0,0,0,0.3), 1px -1px 0 rgba(0,0,0,0.3), -1px 1px 0 rgba(0,0,0,0.3), 1px 1px 0 rgba(0,0,0,0.3);
 }
 
 .banner-title span {
   font-size: 1.1rem;
-  opacity: 0.7;
+  opacity: 0.9;
   font-weight: 400;
+  color: #fff;
+  text-shadow: -1px -1px 0 rgba(0,0,0,0.3), 1px -1px 0 rgba(0,0,0,0.3), -1px 1px 0 rgba(0,0,0,0.3), 1px 1px 0 rgba(0,0,0,0.3);
 }
 
 .banner-desc {
   font-size: 1rem;
-  opacity: 0.9;
+  opacity: 0.95;
   letter-spacing: 4px;
   margin-top: 8px;
-  margin-bottom: 24px;
+  margin-bottom: 0;
+  color: #fff;
+  text-shadow: -1px -1px 0 rgba(0,0,0,0.3), 1px -1px 0 rgba(0,0,0,0.3), -1px 1px 0 rgba(0,0,0,0.3), 1px 1px 0 rgba(0,0,0,0.3);
 }
 
 .breadcrumb {
   font-size: 0.85rem;
   display: flex;
   gap: 8px;
-  opacity: 0.85;
+  opacity: 1;
+  color: white;
 }
 
 .breadcrumb a {
@@ -215,7 +238,8 @@ onUnmounted(() => {
 }
 
 .breadcrumb span.active {
-  color: var(--accent-color);
+  color: #fff;
+  text-shadow: -1px -1px 0 rgba(0,0,0,0.3), 1px -1px 0 rgba(0,0,0,0.3), -1px 1px 0 rgba(0,0,0,0.3), 1px 1px 0 rgba(0,0,0,0.3);
   font-weight: 600;
 }
 

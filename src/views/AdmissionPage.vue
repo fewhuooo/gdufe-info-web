@@ -3,10 +3,14 @@
     <!-- 头部横幅 Banner -->
     <div class="sub-banner">
       <div class="container banner-inner">
-        <h1 class="banner-title">招生就业 <span>/ ENROLLMENT & CAREERS</span></h1>
-        <p class="banner-desc">加入大数据与AI学院 · 赋能数字时代，启航卓越人生</p>
-        <div class="breadcrumb">
-          <router-link to="/">首页</router-link> <span>/</span> <span class="active">招生就业</span>
+        <div class="banner-left">
+          <h1 class="banner-title">招生就业 <span>/ ADMISSION & CAREER</span></h1>
+          <p class="banner-desc">筑梦起航 · 欢迎报考大数据与人工智能学院</p>
+        </div>
+        <div class="banner-right">
+          <div class="breadcrumb">
+            <router-link to="/">首页</router-link> <span>/</span> <span class="active">招生就业</span>
+          </div>
         </div>
       </div>
       <div class="banner-pattern"></div>
@@ -19,8 +23,8 @@
           <h3 class="sidebar-title">招生就业</h3>
           <ul>
             <li v-for="menu in subMenus" :key="menu.id">
-              <button 
-                @click="scrollToAnchor(menu.id)" 
+              <button
+                @click="scrollToAnchor(menu.id)"
                 :class="{ active: activeSection === menu.id }"
               >
                 {{ menu.label }}
@@ -32,89 +36,35 @@
 
       <!-- 右侧：详细内容面板 -->
       <main class="content-pane">
-        <!-- 本科报考 Section -->
-        <section id="undergrad" class="info-section scroll-anchor">
-          <h3 class="pane-section-title">本科报考指南</h3>
-          <div class="faq-box">
-            <p class="emphasized">
-              学院推行“计算机大类-精细化分流-校企实验班”的联合贯通培养模式，大一开展扎实的数学与算法训练，大二全面对接特色专业方向。
-            </p>
-            
-            <div class="accordion-group">
-              <div 
-                v-for="(item, idx) in undergradFaqs" 
-                :key="item.q" 
-                class="accordion-item"
-                :class="{ open: openUndergradIdx === idx }"
-              >
-                <button class="accordion-trigger" @click="toggleUndergrad(idx)">
-                  <span class="q-icon">Q</span>
-                  <h4>{{ item.q }}</h4>
-                  <span class="chevron">{{ openUndergradIdx === idx ? '▲' : '▼' }}</span>
-                </button>
-                <div class="accordion-content">
-                  <p>{{ item.a }}</p>
-                </div>
-              </div>
+        <!-- 招生工作 Section -->
+        <section id="enrollment" class="info-section scroll-anchor">
+          <h3 class="pane-section-title">招生工作</h3>
+          <div class="article-list">
+            <div v-for="(item, idx) in enrollmentArticles" :key="idx" class="article-item">
+              <span class="article-date">{{ item.date }}</span>
+              <a href="#" class="article-title-link" @click.prevent>{{ item.title }}</a>
             </div>
           </div>
         </section>
 
-        <!-- 研究生招生 Section -->
-        <section id="grad" class="info-section scroll-anchor">
-          <h3 class="pane-section-title">硕士研究生招考</h3>
-          <div class="grad-box">
-            <div class="grad-brief">
-              <h4>招考专业：电子信息（专硕） / 计算机科学与技术（学硕）</h4>
-              <p>
-                招收全国统考硕士及推荐免试研究生。主要研究方向包括：深度学习理论前沿、图神经网络商业智能、工业互联网安全攻防、分布式流式数据库计算。
-              </p>
-              <div class="grad-timeline">
-                <h5>主要时间节点：</h5>
-                <ul>
-                  <li><strong>09月-10月</strong>: 推荐免试生（推免生）接收申请与夏令营复试</li>
-                  <li><strong>10月-11月</strong>: 全国研究生统一考试大纲发布与报名阶段</li>
-                  <li><strong>12月下旬</strong>: 全国硕士研究生招生考试统考笔试阶段</li>
-                  <li><strong>次年03月</strong>: 复试调剂大纲发布与面试复审阶段</li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <!-- 生涯就业 Section -->
+        <!-- 就业工作 Section -->
         <section id="career" class="info-section scroll-anchor">
-          <h3 class="pane-section-title">毕业生生涯与就业质量</h3>
-          <div class="career-stats">
-            <div class="c-stat-box">
-              <span class="num">98.6%</span>
-              <span class="lbl">年终综合就业率</span>
-            </div>
-            <div class="c-stat-box">
-              <span class="num">12.8 k</span>
-              <span class="lbl">本科生首期平均月薪</span>
-            </div>
-            <div class="c-stat-box">
-              <span class="num">82.3%</span>
-              <span class="lbl">大湾区（广深佛）落地率</span>
+          <h3 class="pane-section-title">就业工作</h3>
+          <div class="article-list">
+            <div v-for="(item, idx) in careerArticles" :key="idx" class="article-item">
+              <span class="article-date">{{ item.date }}</span>
+              <a href="#" class="article-title-link" @click.prevent>{{ item.title }}</a>
             </div>
           </div>
+        </section>
 
-          <div class="destinations">
-            <h4>主要就业去向 (Key Recruiters)</h4>
-            <div class="dest-grid">
-              <div class="dest-card">
-                <h5>🚀 头部互联网与科技巨头</h5>
-                <p>腾讯、阿里巴巴、网易游戏、字节跳动、华为科技等。</p>
-              </div>
-              <div class="dest-card">
-                <h5>🏦 金融机构与数据中心</h5>
-                <p>四大国有银行软件开发中心、招商银行风控中心、广发证券智能投资平台。</p>
-              </div>
-              <div class="dest-card">
-                <h5>🏫 国内知名高校深造</h5>
-                <p>中山大学、华南理工大学、暨南大学、清华大学深圳研究生院等。</p>
-              </div>
+        <!-- 招聘信息 Section -->
+        <section id="recruitment" class="info-section scroll-anchor">
+          <h3 class="pane-section-title">招聘信息</h3>
+          <div class="article-list">
+            <div v-for="(item, idx) in recruitmentArticles" :key="idx" class="article-item">
+              <span class="article-date">{{ item.date }}</span>
+              <a href="#" class="article-title-link" @click.prevent>{{ item.title }}</a>
             </div>
           </div>
         </section>
@@ -126,37 +76,49 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from "vue";
 
-const activeSection = ref("undergrad");
-const openUndergradIdx = ref<number | null>(0);
+const activeSection = ref("enrollment");
 
 const subMenus = [
-  { id: "undergrad", label: "本科报考" },
-  { id: "grad", label: "硕博申请" },
-  { id: "career", label: "生涯就业" }
+  { id: "enrollment", label: "招生工作" },
+  { id: "career", label: "就业工作" },
+  { id: "recruitment", label: "招聘信息" }
 ];
 
-const undergradFaqs = [
-  {
-    q: "新生入校后如何申报“华为云创实验班”或“腾讯大模型先锋班”？",
-    a: "入学当月举行全院新生分班考试，考察数学与基础编程逻辑。考试通过者即可编入联合校企实验班，单独配备双师资指导，执行单独的高难度培养体系。"
-  },
-  {
-    q: "大类招生分流方案是如何执行的？",
-    a: "学院目前大一执行计算机类大类培养。大一第二学期末，根据“大一平均成绩绩点占70% + 科创折算积分/专家面试占30%”的综合排名，遵循志愿优先原则开展专业精细化分流。"
-  },
-  {
-    q: "学院对于本科生科创项目及竞赛有哪些奖励支持？",
-    a: "学院设立了年均十万元的专项科创奖学金，报销参赛学生的全部路费及报名费，并提供一流的创客工作室和高性能计算算力支持。"
-  }
+const enrollmentArticles = [
+  { title: `广东财经大学大数据与人工智能学院2026年硕士研究生招生考试调剂通知`, date: "2026-04-08" },
+  { title: `广州瑞米设计有限公司开展宣讲会`, date: "2022-05-26" },
+  { title: `信息学院召开2022届毕业生就业工作推进会`, date: "2022-05-17" }
 ];
 
-const toggleUndergrad = (idx: number) => {
-  if (openUndergradIdx.value === idx) {
-    openUndergradIdx.value = null;
-  } else {
-    openUndergradIdx.value = idx;
-  }
-};
+const careerArticles = [
+  { title: `访企拓岗促就业——大数据与人工智能学院走访云蝶科技有限公司`, date: "2026-03-27" },
+  { title: `大数据与人工智能学院组织学生参加“百万英才汇南粤”2026年春季大型综合招聘会`, date: "2026-03-16" },
+  { title: `访企拓岗促就业——大数据与人工智能学院走访校友企业广州锐谷信息科技有限公司`, date: "2026-03-12" },
+  { title: `访企拓岗促就业——大数据与人工智能学院走访京华信息科技股份有限公司`, date: "2026-03-12" },
+  { title: `访企拓岗促就业——大数据与人工智能学院走访广东鸿数科技有限公司`, date: "2026-02-05" },
+  { title: `访企拓岗促就业——大数据与人工智能学院走访深圳市图拉斯科技有限公司`, date: "2025-12-11" },
+  { title: `大数据与人工智能学院成功举办2026届毕业生就业工作启动大会`, date: "2025-10-15" },
+  { title: `访企拓岗促就业——大数据与人工智能学院走访广州优诺创新科技有限公司`, date: "2025-09-23" },
+  { title: `大数据与人工智能学院2025届本科毕业生升学捷报`, date: "2025-08-24" },
+  { title: `我院举办“二战”考公考研座谈会暨基层项目政策宣讲会`, date: "2025-08-24" }
+];
+
+const recruitmentArticles = [
+  { title: `我院成功举办2025年春季招聘会`, date: "2025-08-24" },
+  { title: `我院领导率队助力学子逐梦跨境电商领域`, date: "2025-08-24" },
+  { title: `院组织学生参加“百万英才汇南粤” 春季大型招聘`, date: "2025-08-24" },
+  { title: `我院召开校企供需对接会`, date: "2025-08-22" },
+  { title: `2023年7月9日至7月15日招聘信息`, date: "2023-07-09" },
+  { title: `2023年7月2日至7月8日招聘信息`, date: "2023-07-02" },
+  { title: `2023年6月11日至6月17日招聘信息`, date: "2023-06-11" },
+  { title: `2023年6月4日至6月10日招聘信息`, date: "2023-06-03" },
+  { title: `2023年5月28日至6月3日招聘信息`, date: "2023-05-28" },
+  { title: `2023年5月21日至5月27日招聘信息`, date: "2023-05-21" },
+  { title: `2023年4月24日至4月30日招聘信息`, date: "2023-04-24" },
+  { title: `2023年4月17日至4月23日招聘信息`, date: "2023-04-17" },
+  { title: `2023年4月10日至4月16日招聘信息`, date: "2023-04-10" },
+  { title: `2023年3月27日至4月2日招聘信息`, date: "2023-03-25" }
+];
 
 const scrollToAnchor = (id: string) => {
   const el = document.getElementById(id);
@@ -166,7 +128,7 @@ const scrollToAnchor = (id: string) => {
     const elementRect = el.getBoundingClientRect().top;
     const elementPosition = elementRect - bodyRect;
     const offsetPosition = elementPosition - offset;
-    
+
     window.scrollTo({
       top: offsetPosition,
       behavior: "smooth"
@@ -176,7 +138,7 @@ const scrollToAnchor = (id: string) => {
 
 const handleScroll = () => {
   const scrollPosition = window.scrollY + 140;
-  
+
   for (const menu of subMenus) {
     const el = document.getElementById(menu.id);
     if (el) {
@@ -210,7 +172,9 @@ onUnmounted(() => {
 /* 子页横幅 Banner */
 .sub-banner {
   height: 280px;
-  background: var(--gradient-hero);
+  background-image: url('@/assets/images/subpage_banner_bg.png');
+  background-size: cover;
+  background-position: center;
   position: relative;
   display: flex;
   align-items: center;
@@ -221,6 +185,21 @@ onUnmounted(() => {
 .banner-inner {
   position: relative;
   z-index: 2;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.banner-left {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.banner-right {
+  display: flex;
+  align-items: center;
 }
 
 .banner-title {
@@ -228,30 +207,36 @@ onUnmounted(() => {
   font-size: 2.25rem;
   font-weight: 800;
   letter-spacing: 2px;
-  display: flex;
-  align-items: baseline;
+  display: inline;
   gap: 12px;
+  color: #fff;
+  text-shadow: -1px -1px 0 rgba(0,0,0,0.3), 1px -1px 0 rgba(0,0,0,0.3), -1px 1px 0 rgba(0,0,0,0.3), 1px 1px 0 rgba(0,0,0,0.3);
 }
 
 .banner-title span {
   font-size: 1.1rem;
-  opacity: 0.7;
+  opacity: 0.9;
   font-weight: 400;
+  color: #fff;
+  text-shadow: -1px -1px 0 rgba(0,0,0,0.3), 1px -1px 0 rgba(0,0,0,0.3), -1px 1px 0 rgba(0,0,0,0.3), 1px 1px 0 rgba(0,0,0,0.3);
 }
 
 .banner-desc {
   font-size: 1rem;
-  opacity: 0.9;
+  opacity: 0.95;
   letter-spacing: 4px;
   margin-top: 8px;
-  margin-bottom: 24px;
+  margin-bottom: 0;
+  color: #fff;
+  text-shadow: -1px -1px 0 rgba(0,0,0,0.3), 1px -1px 0 rgba(0,0,0,0.3), -1px 1px 0 rgba(0,0,0,0.3), 1px 1px 0 rgba(0,0,0,0.3);
 }
 
 .breadcrumb {
   font-size: 0.85rem;
   display: flex;
   gap: 8px;
-  opacity: 0.85;
+  opacity: 1;
+  color: white;
 }
 
 .breadcrumb a {
@@ -265,7 +250,8 @@ onUnmounted(() => {
 }
 
 .breadcrumb span.active {
-  color: var(--accent-color);
+  color: #fff;
+  text-shadow: -1px -1px 0 rgba(0,0,0,0.3), 1px -1px 0 rgba(0,0,0,0.3), -1px 1px 0 rgba(0,0,0,0.3), 1px 1px 0 rgba(0,0,0,0.3);
   font-weight: 600;
 }
 
@@ -305,11 +291,6 @@ onUnmounted(() => {
   padding-bottom: 12px;
 }
 
-.dark .sidebar-title {
-  color: white;
-  border-bottom-color: var(--highlight-color);
-}
-
 .sidebar-menu ul {
   display: flex;
   flex-direction: column;
@@ -343,12 +324,6 @@ onUnmounted(() => {
   font-weight: 700;
 }
 
-.dark .sidebar-menu button.active {
-  background-color: rgba(0, 174, 239, 0.08);
-  color: var(--highlight-color);
-  border-left-color: var(--highlight-color);
-}
-
 /* 右侧内容 */
 .content-pane {
   display: flex;
@@ -366,269 +341,55 @@ onUnmounted(() => {
   margin-bottom: 24px;
 }
 
-.dark .pane-section-title {
-  color: white;
-}
-
-.faq-box {
-  background-color: var(--bg-card);
-  padding: 36px;
-  border-radius: var(--border-radius-lg);
-  border: 1px solid var(--border-color);
-  box-shadow: var(--shadow-sm);
-}
-
-.faq-box p.emphasized {
-  font-size: 1.05rem;
-  line-height: 1.8;
-  color: var(--primary-color);
-  margin-bottom: 28px;
-  font-weight: 600;
-}
-
-.dark .faq-box p.emphasized {
-  color: var(--highlight-color);
-}
-
-/* FAQ 手风琴 */
-.accordion-group {
+/* 文章列表 */
+.article-list {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-}
-
-.accordion-item {
+  gap: 0;
+  background-color: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius-lg);
-  background-color: var(--bg-color);
   overflow: hidden;
-  transition: all 0.3s;
-}
-
-.dark .accordion-item {
-  background-color: rgba(255, 255, 255, 0.02);
-}
-
-.accordion-trigger {
-  width: 100%;
-  background: none;
-  border: none;
-  display: flex;
-  align-items: center;
-  padding: 20px 24px;
-  cursor: pointer;
-  text-align: left;
-  gap: 16px;
-  transition: all 0.3s;
-}
-
-.accordion-trigger .q-icon {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  background-color: var(--primary-color);
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--font-heading);
-  font-weight: 900;
-  font-size: 0.95rem;
-  flex-shrink: 0;
-}
-
-.accordion-trigger h4 {
-  font-family: var(--font-heading);
-  font-size: 0.98rem;
-  font-weight: 700;
-  color: var(--secondary-color);
-  flex-grow: 1;
-}
-
-.dark .accordion-trigger h4 {
-  color: white;
-}
-
-.accordion-trigger .chevron {
-  font-size: 0.75rem;
-  color: var(--text-secondary);
-}
-
-.accordion-content {
-  max-height: 0;
-  overflow: hidden;
-  transition: max-height 0.3s ease-out, padding 0.3s ease;
-  padding: 0 24px;
-  background-color: var(--bg-card);
-  font-size: 0.85rem;
-  color: var(--text-secondary);
-  line-height: 1.6;
-}
-
-.accordion-item.open {
-  border-color: rgba(26, 92, 175, 0.25);
   box-shadow: var(--shadow-sm);
 }
 
-.accordion-item.open .accordion-content {
-  max-height: 200px;
-  padding: 0 24px 24px 70px;
-  border-top: 1px dashed var(--border-color);
-}
-
-/* 研究生考日程 */
-.grad-box {
-  background-color: var(--bg-card);
-  padding: 36px;
-  border-radius: var(--border-radius-lg);
-  border: 1px solid var(--border-color);
-  box-shadow: var(--shadow-sm);
-}
-
-.grad-brief h4 {
-  font-family: var(--font-heading);
-  font-size: 1.15rem;
-  font-weight: 700;
-  color: var(--secondary-color);
-  margin-bottom: 12px;
+.article-item {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 18px 24px;
   border-bottom: 1px solid var(--border-color);
-  padding-bottom: 10px;
+  transition: background-color 0.3s;
 }
 
-.dark .grad-brief h4 {
-  color: white;
+.article-item:last-child {
+  border-bottom: none;
 }
 
-.grad-brief p {
-  font-size: 0.9rem;
-  color: var(--text-secondary);
-  line-height: 1.7;
-  margin-bottom: 24px;
+.article-item:hover {
+  background-color: rgba(26, 92, 175, 0.03);
 }
 
-.grad-timeline h5 {
-  font-family: var(--font-heading);
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: var(--primary-color);
-  margin-bottom: 14px;
-}
-
-.dark .grad-timeline h5 {
-  color: var(--highlight-color);
-}
-
-.grad-timeline ul {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.grad-timeline li {
+.article-date {
+  font-family: var(--font-data);
   font-size: 0.85rem;
-  color: var(--text-primary);
-  display: flex;
-  gap: 10px;
-}
-
-.grad-timeline li strong {
+  font-weight: 600;
   color: var(--accent-color);
   flex-shrink: 0;
-  width: 100px;
+  width: 90px;
 }
 
-/* 就业统计 */
-.career-stats {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
-  margin-bottom: 36px;
-}
-
-.c-stat-box {
-  background-color: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius-lg);
-  padding: 24px 16px;
-  text-align: center;
-  box-shadow: var(--shadow-sm);
-}
-
-.c-stat-box .num {
-  font-family: var(--font-data);
-  font-size: 2.2rem;
-  font-weight: 700;
-  color: var(--secondary-color);
-  display: block;
-}
-
-.dark .c-stat-box .num {
-  color: var(--highlight-color);
-}
-
-.c-stat-box .lbl {
-  font-size: 0.8rem;
-  color: var(--text-secondary);
-  margin-top: 4px;
-  display: block;
-}
-
-/* 就业去向 */
-.destinations {
-  background-color: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius-lg);
-  padding: 30px;
-  box-shadow: var(--shadow-sm);
-}
-
-.destinations h4 {
-  font-family: var(--font-heading);
-  font-size: 1.15rem;
-  font-weight: 700;
-  color: var(--secondary-color);
-  margin-bottom: 20px;
-  border-bottom: 1px dashed var(--border-color);
-  padding-bottom: 10px;
-}
-
-.dark .destinations h4 {
-  color: white;
-}
-
-.dest-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
-}
-
-.dest-card {
-  background-color: var(--bg-color);
-  padding: 20px;
-  border-radius: var(--border-radius);
-  border: 1px solid var(--border-color);
-}
-
-.dark .dest-card {
-  background-color: rgba(255, 255, 255, 0.02);
-}
-
-.dest-card h5 {
-  font-family: var(--font-heading);
-  font-size: 0.9rem;
-  font-weight: 700;
-  color: var(--secondary-color);
-  margin-bottom: 8px;
-}
-
-.dark .dest-card h5 {
-  color: white;
-}
-
-.dest-card p {
-  font-size: 0.8rem;
-  color: var(--text-secondary);
+.article-title-link {
+  font-size: 0.95rem;
+  color: var(--text-primary);
+  text-decoration: none;
+  transition: color 0.3s;
   line-height: 1.5;
+}
+
+.article-title-link:hover {
+  color: var(--primary-color);
+  text-decoration: underline;
 }
 
 @media (max-width: 900px) {
@@ -639,8 +400,10 @@ onUnmounted(() => {
   .sidebar-menu {
     display: none;
   }
-  .career-stats, .dest-grid {
-    grid-template-columns: 1fr;
+  .article-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
   }
 }
 </style>

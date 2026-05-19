@@ -13,7 +13,7 @@
           </div>
           <h3 class="column-title">学院风采</h3>
         </div>
-        <router-link to="/about" class="view-more-btn">
+        <router-link to="/showcase" class="view-more-btn">
           <span>更多风采</span>
           <svg class="chevron-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <polyline points="9 18 15 12 9 6"></polyline>
@@ -57,6 +57,10 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
+import img1 from '@/assets/images/1.jpg';
+import img2 from '@/assets/images/2.jpg';
+import img3 from '@/assets/images/3.png';
+import img4 from '@/assets/images/4.jpg';
 
 const activeCard = ref(0);
 
@@ -66,25 +70,25 @@ const showcaseItems = ref([
     category: '教学科研',
     title: '数智极客实验室',
     desc: '配备顶尖高算力算力集群，支持大模型训练与大数据智能前沿探索科研实践。',
-    image: '/src/assets/images/gdufe_sports_day.png' // Default demo image
+    image: img1
   },
   {
     category: '学术交流',
     title: '海峡两岸前沿学术研讨会',
     desc: '定期开展国内外顶尖知名学者专题学术研讨会，碰撞学术与科技前沿的火花。',
-    image: '/src/assets/images/gdufe_sports_day.png'
+    image: img2
   },
   {
     category: '第二课堂',
     title: 'IT文化节科技创新挑战赛',
     desc: '丰富的科技类与创新竞赛活动，鼓励同学们在代码与设计实践中释放创造力。',
-    image: '/src/assets/images/gdufe_sports_day.png'
+    image: img3
   },
   {
     category: '美丽校园',
     title: '晨曦中的逸夫图书馆',
     desc: '绿树掩映中的广财学术朝圣之地，见证着每一位学子的拼搏与成长岁月。',
-    image: '/src/assets/images/gdufe_sports_day.png'
+    image: img4
   }
 ]);
 </script>

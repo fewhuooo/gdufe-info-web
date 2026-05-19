@@ -90,7 +90,7 @@
 
             <!-- 主图 -->
             <img 
-              src="/src/assets/images/it_culture_poster.png" 
+              :src="itCulturePoster" 
               alt="学院官网设计大赛海报" 
               class="poster-image"
             />
@@ -148,6 +148,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
+import itCulturePoster from '@/assets/images/it_culture_poster.png';
 
 const showModal = ref(false);
 const posterCard = ref<HTMLElement | null>(null);

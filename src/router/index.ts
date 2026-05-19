@@ -14,6 +14,16 @@ const router = createRouter({
       component: () => import("../views/AboutPage.vue")
     },
     {
+      path: "/news",
+      name: "news",
+      component: () => import("../views/NewsPage.vue")
+    },
+    {
+      path: "/news/:id",
+      name: "news-detail",
+      component: () => import("../views/NewsDetailPage.vue")
+    },
+    {
       path: "/education",
       name: "education",
       component: () => import("../views/EducationPage.vue")
@@ -37,9 +47,29 @@ const router = createRouter({
       path: "/admission",
       name: "admission",
       component: () => import("../views/AdmissionPage.vue")
+    },
+    {
+      path: "/showcase",
+      name: "showcase",
+      component: () => import("../views/ShowcasePage.vue")
     }
   ],
-  scrollBehavior() {
+  scrollBehavior(to, from, savedPosition) {
+    if (to.hash) {
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          const el = document.getElementById(to.hash.slice(1));
+          if (el) {
+            resolve({ top: el.offsetTop - 90, behavior: "smooth" });
+          } else {
+            resolve({ top: 0 });
+          }
+        }, 300);
+      });
+    }
+    if (savedPosition) {
+      return savedPosition;
+    }
     return { top: 0 };
   }
 });

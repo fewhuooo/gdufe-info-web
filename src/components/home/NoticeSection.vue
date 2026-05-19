@@ -16,7 +16,7 @@
               </div>
               <h3 class="column-title">通知公告</h3>
             </div>
-            <router-link to="/about" class="view-more-btn">
+            <router-link to="/news#notices" class="view-more-btn">
               <span>查看更多</span>
               <svg class="chevron-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <polyline points="9 18 15 12 9 6"></polyline>
@@ -26,14 +26,15 @@
 
           <!-- 4条经典列表 -->
           <div class="notice-list-container">
-            <div 
+            <router-link 
               v-for="item in notices" 
               :key="item.title" 
+              :to="'/news/' + item.id"
               class="notice-list-item"
             >
               <h4 class="notice-item-title">{{ item.title }}</h4>
               <span class="notice-item-date">{{ item.date }}</span>
-            </div>
+            </router-link>
           </div>
 
           <!-- 底部学校主楼线描装饰 (完美契合截图背景) -->
@@ -58,7 +59,7 @@
               </div>
               <h3 class="column-title">学术信息</h3>
             </div>
-            <router-link to="/about" class="view-more-btn">
+            <router-link to="/news#academic" class="view-more-btn">
               <span>查看更多</span>
               <svg class="chevron-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <polyline points="9 18 15 12 9 6"></polyline>
@@ -68,9 +69,10 @@
 
           <!-- 2x2 学术信息卡片宫格 -->
           <div class="academic-grid-2x2">
-            <div 
+            <router-link 
               v-for="card in academics" 
               :key="card.title" 
+              :to="'/news/' + card.id"
               class="academic-card-item"
               :class="{ 'highlighted-active': card.highlight }"
             >
@@ -84,7 +86,7 @@
               <div class="academic-card-body">
                 <h4 class="academic-card-title">{{ card.title }}</h4>
               </div>
-            </div>
+            </router-link>
           </div>
         </div>
 
@@ -100,19 +102,23 @@ import { ref } from "vue";
 const notices = ref([
   {
     title: "关于2025级普教本科生辅修专业报名的通知",
-    date: "2026.4.29"
+    date: "2026.4.29",
+    id: "11"
   },
   {
     title: "广东财经大学大数据与人工智能学院2026年智能科学与技术专业硕士研究生招生简章",
-    date: "2026.4.09"
+    date: "2026.4.09",
+    id: "12"
   },
   {
     title: "广东财经大学大数据与人工智能学院2026年硕士研究生招生考试调剂通知",
-    date: "2026.4.08"
+    date: "2026.4.08",
+    id: "13"
   },
   {
     title: "广东财经大学大数据与人工智能学院2026年硕士研究生招生考试调剂工作办法",
-    date: "2026.4.01"
+    date: "2026.4.01",
+    id: "14"
   }
 ]);
 
@@ -121,22 +127,26 @@ const academics = ref([
   {
     date: "2025.12.10",
     title: "2025机器学习进展及应用学术会议 (WAAML 2025) 在我校召开",
-    highlight: false
+    highlight: false,
+    id: "15"
   },
   {
     date: "2025.11.11",
     title: "我院举办“大型语言模型的双面性：网络安全视角下的利和弊”专题学术报告会",
-    highlight: false
+    highlight: false,
+    id: "16"
   },
   {
     date: "2025.9.11",
     title: "我院举办“复杂经济管理下的统计学习与管理决策”专题学术报告会",
-    highlight: true
+    highlight: true,
+    id: "17"
   },
   {
     date: "2025.8.29",
     title: "我院邀请吉林大学王晰巍教授作图书情报专题指导报告",
-    highlight: false
+    highlight: false,
+    id: "18"
   }
 ]);
 </script>
@@ -253,6 +263,8 @@ const academics = ref([
   border-bottom: 1px dashed var(--border-color);
   cursor: pointer;
   transition: all 0.3s;
+  text-decoration: none; /* 清除链接下划线 */
+  display: block; /* 作为块级元素渲染以换行 */
 }
 
 .notice-list-item:last-child {
@@ -337,6 +349,7 @@ const academics = ref([
   justify-content: center;
   padding: 1.5rem;
   box-sizing: border-box;
+  text-decoration: none; /* 清除链接下划线 */
 }
 
 .dark .academic-card-item {
