@@ -20,9 +20,10 @@
 
           <!-- 选项菜单列表 -->
           <div class="menu-list-wrapper">
-            <div 
+            <router-link 
               v-for="item in menuItems" 
               :key="item.name" 
+              :to="item.path"
               class="menu-list-item"
             >
               <div class="item-left-group">
@@ -36,36 +37,44 @@
                   <polyline points="9 18 15 12 9 6"></polyline>
                 </svg>
               </div>
-            </div>
+            </router-link>
           </div>
         </div>
 
-        <!-- 右侧：招生视频播放区 -->
         <div class="admission-right-col">
-          <div class="video-card-container">
-            <!-- 刚刚由AI高拟真生成的广财校运会背景大图 -->
-            <img 
-              src="/src/assets/images/gdufe_sports_day.png" 
-              alt="广东财经大学教职工趣味运动会" 
-              class="video-cover-img"
-            />
-            
-            <!-- 水晶磨砂黑色渐变底层标题遮罩 -->
-            <div class="video-bottom-overlay">
-              <h4 class="video-overlay-title">招生宣传视频</h4>
-            </div>
+          <div class="video-card-container" @click="togglePlay">
+            <video 
+              ref="videoRef"
+              :src="admissionVideo" 
+              class="actual-video" 
+              preload="metadata"
+              playsinline
+              @play="onPlay"
+              @pause="onPause"
+              @ended="onEnded"
+            ></video>
 
-            <!-- 经典白圈圆形发光播放按钮 (完全融合截图) -->
-            <div class="video-play-btn-wrapper">
-              <div class="circular-play-button">
-                <svg class="play-arrow-svg" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M8 5v14l11-7z"></path>
-                </svg>
+            <!-- 水晶遮罩 & 播放按钮 (仅在视频暂停或未播放时显示) -->
+            <transition name="video-fade">
+              <div v-if="!isPlaying" class="video-overlay-wrapper">
+                <!-- 水晶磨砂黑色渐变底层标题遮罩 -->
+                <div class="video-bottom-overlay">
+                  <h4 class="video-overlay-title">招生宣传视频</h4>
+                </div>
+
+                <!-- 经典白圈圆形发光播放按钮 (完全融合截图) -->
+                <div class="video-play-btn-wrapper">
+                  <div class="circular-play-button">
+                    <svg class="play-arrow-svg" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M8 5v14l11-7z"></path>
+                    </svg>
+                  </div>
+                </div>
+
+                <!-- 微晶高科技边框线装饰 -->
+                <div class="video-border-highlight"></div>
               </div>
-            </div>
-
-            <!-- 微晶高科技边框线装饰 -->
-            <div class="video-border-highlight"></div>
+            </transition>
           </div>
         </div>
 
@@ -76,23 +85,55 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
+import admissionVideo from '@/assets/video/a5050563-290c-4da4-bc3a-974d5b6e2acb.mp4';
 
-// Menu items with high-fidelity inline SVGs perfectly matching the academic icon style in screenshot
+const videoRef = ref<HTMLVideoElement | null>(null);
+const isPlaying = ref(false);
+
+const togglePlay = () => {
+  if (!videoRef.value) return;
+  if (videoRef.value.paused) {
+    videoRef.value.play();
+  } else {
+    videoRef.value.pause();
+  }
+};
+
+const onPlay = () => {
+  isPlaying.value = true;
+  if (videoRef.value) videoRef.value.controls = true;
+};
+
+const onPause = () => {
+  isPlaying.value = false;
+  if (videoRef.value) videoRef.value.controls = false;
+};
+
+const onEnded = () => {
+  isPlaying.value = false;
+  if (videoRef.value) videoRef.value.controls = false;
+};
+
+// Menu items with high-fidelity inline SVGs and routing paths linked to AdmissionPage sections
 const menuItems = ref([
   {
-    name: '实习实践',
-    iconSvg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="menu-icon"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>`
+    name: '招生工作',
+    path: '/admission#enrollment',
+    iconSvg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="menu-icon"><path d="M12 2L2 7l10 5 10-5-10-5z"></path><path d="M2 17l10 5 10-5"></path><path d="M2 12l10 5 10-5"></path></svg>`
   },
   {
-    name: '校园生活',
-    iconSvg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="menu-icon"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>`
+    name: '就业工作',
+    path: '/admission#career',
+    iconSvg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="menu-icon"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>`
   },
   {
-    name: '合作交流',
-    iconSvg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="menu-icon"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>`
+    name: '招聘信息',
+    path: '/admission#recruitment',
+    iconSvg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="menu-icon"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path><line x1="12" y1="11" x2="12" y2="17"></line><line x1="9" y1="14" x2="15" y2="14"></line></svg>`
   },
   {
     name: '查看更多',
+    path: '/admission',
     iconSvg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="menu-icon"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg>`
   }
 ]);
@@ -200,6 +241,7 @@ const menuItems = ref([
   background-color: transparent;
   transition: all 0.35s cubic-bezier(0.25, 0.8, 0.25, 1);
   border-radius: var(--border-radius); /* 完美适配方正直角 */
+  text-decoration: none;
 }
 
 .menu-list-item:hover {
@@ -306,6 +348,35 @@ const menuItems = ref([
   height: 100%;
   object-fit: cover;
   transition: transform 0.6s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.actual-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  z-index: 10;
+}
+
+.video-overlay-wrapper {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 20;
+}
+
+/* 渐变切换动效 */
+.video-fade-enter-active,
+.video-fade-leave-active {
+  transition: opacity 0.4s ease;
+}
+
+.video-fade-enter-from,
+.video-fade-leave-to {
+  opacity: 0;
 }
 
 .video-card-container:hover .video-cover-img {

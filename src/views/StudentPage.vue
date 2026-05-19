@@ -3,10 +3,14 @@
     <!-- 头部横幅 Banner -->
     <div class="sub-banner">
       <div class="container banner-inner">
-        <h1 class="banner-title">学生天地 <span>/ STUDENT LIFE</span></h1>
-        <p class="banner-desc">青春飞扬，科创筑梦 · 自由探索与卓越实践的第二课堂</p>
-        <div class="breadcrumb">
-          <router-link to="/">首页</router-link> <span>/</span> <span class="active">学生天地</span>
+        <div class="banner-left">
+          <h1 class="banner-title">学生工作 <span>/ STUDENT AFFAIRS</span></h1>
+          <p class="banner-desc">激扬青春 · 自由探索与卓越实践的第二课堂</p>
+        </div>
+        <div class="banner-right">
+          <div class="breadcrumb">
+            <router-link to="/">首页</router-link> <span>/</span> <span class="active">学生工作</span>
+          </div>
         </div>
       </div>
       <div class="banner-pattern"></div>
@@ -16,11 +20,11 @@
       <!-- 左侧：二级悬浮侧边栏 -->
       <aside class="sidebar-menu">
         <div class="sidebar-sticky">
-          <h3 class="sidebar-title">学生天地</h3>
+          <h3 class="sidebar-title">学生工作</h3>
           <ul>
             <li v-for="menu in subMenus" :key="menu.id">
-              <button 
-                @click="scrollToAnchor(menu.id)" 
+              <button
+                @click="scrollToAnchor(menu.id)"
                 :class="{ active: activeSection === menu.id }"
               >
                 {{ menu.label }}
@@ -34,76 +38,44 @@
       <main class="content-pane">
         <!-- 团学活动 Section -->
         <section id="activities" class="info-section scroll-anchor">
-          <h3 class="pane-section-title">团学活动与丰富校园文化</h3>
-          <div class="activities-showcase">
-            <div class="act-card">
-              <div class="act-img-placeholder">🎨</div>
-              <div class="act-info">
-                <h4>第一届“智算未来”科技艺术节</h4>
-                <p>将严谨的数字逻辑与充满灵感的视觉艺术结合，由学生自行编写AI渲染脚本进行大屏实时交互演练，吸引全校千余名师生参会体验。</p>
-              </div>
-            </div>
-            
-            <div class="act-card">
-              <div class="act-img-placeholder">💻</div>
-              <div class="act-info">
-                <h4>“24小时极限编程”青年黑客松挑战赛</h4>
-                <p>学院传统金牌活动。以“大湾区数字生活”为命题，党员骨干带头组队，现场封闭式研发24小时，最终输出多款创意十足的应用系统。</p>
-              </div>
+          <h3 class="pane-section-title">团学活动</h3>
+          <div class="article-list">
+            <div v-for="(item, idx) in activityArticles" :key="idx" class="article-item">
+              <span class="article-date">{{ item.date }}</span>
+              <a href="#" class="article-title-link" @click.prevent>{{ item.title }}</a>
             </div>
           </div>
         </section>
 
-        <!-- 竞赛获奖 Section -->
-        <section id="awards" class="info-section scroll-anchor">
-          <h3 class="pane-section-title">学科竞赛与创新创业成果</h3>
-          <p class="section-intro-text">
-            学院高度重视学生的实践动手能力，通过成立“科创导航工作室”，指导学生在大赛中攻坚克难，连创佳绩。
-          </p>
-          
-          <div class="awards-table-wrapper">
-            <table class="awards-table">
-              <thead>
-                <tr>
-                  <th>年度</th>
-                  <th>赛事名称</th>
-                  <th>获奖项</th>
-                  <th>参赛团队/个人</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td class="year">2026</td>
-                  <td class="event">第十六届“挑战杯”全国大学生学术作品竞赛</td>
-                  <td class="award gold">全国特等奖</td>
-                  <td>金融风控智能开发组</td>
-                </tr>
-                <tr>
-                  <td class="year">2025</td>
-                  <td class="event">ACM-ICPC 国际大学生程序设计竞赛（省级）</td>
-                  <td class="award silver">金奖 (第1名)</td>
-                  <td>算法极客队</td>
-                </tr>
-                <tr>
-                  <td class="year">2025</td>
-                  <td class="event">第十四届“蓝桥杯”全国软件人才设计大赛</td>
-                  <td class="award">一等奖 (5人)</td>
-                  <td>李明、王华 等</td>
-                </tr>
-              </tbody>
-            </table>
+        <!-- 学术科研 Section -->
+        <section id="academic" class="info-section scroll-anchor">
+          <h3 class="pane-section-title">学术科研</h3>
+          <div class="article-list">
+            <div v-for="(item, idx) in academicArticles" :key="idx" class="article-item">
+              <span class="article-date">{{ item.date }}</span>
+              <a href="#" class="article-title-link" @click.prevent>{{ item.title }}</a>
+            </div>
           </div>
         </section>
 
-        <!-- 校友风采 Section -->
-        <section id="alumni" class="info-section scroll-anchor">
-          <h3 class="pane-section-title">优秀校友力量</h3>
-          <div class="alumni-grid">
-            <div v-for="alum in alumni" :key="alum.name" class="alumni-card">
-              <div class="alumni-badge">{{ alum.batch }}届</div>
-              <h4>{{ alum.name }}</h4>
-              <span class="alumni-company">{{ alum.company }}</span>
-              <p class="alumni-desc">{{ alum.desc }}</p>
+        <!-- 奖助贷工作 Section -->
+        <section id="scholarship" class="info-section scroll-anchor">
+          <h3 class="pane-section-title">奖助贷工作</h3>
+          <div class="article-list">
+            <div v-for="(item, idx) in scholarshipArticles" :key="idx" class="article-item">
+              <span class="article-date">{{ item.date }}</span>
+              <a href="#" class="article-title-link" @click.prevent>{{ item.title }}</a>
+            </div>
+          </div>
+        </section>
+
+        <!-- 心理健康 Section -->
+        <section id="mentalhealth" class="info-section scroll-anchor">
+          <h3 class="pane-section-title">心理健康</h3>
+          <div class="article-list">
+            <div v-for="(item, idx) in mentalHealthArticles" :key="idx" class="article-item">
+              <span class="article-date">{{ item.date }}</span>
+              <a href="#" class="article-title-link" @click.prevent>{{ item.title }}</a>
             </div>
           </div>
         </section>
@@ -119,29 +91,59 @@ const activeSection = ref("activities");
 
 const subMenus = [
   { id: "activities", label: "团学活动" },
-  { id: "awards", label: "竞赛获奖" },
-  { id: "alumni", label: "优秀校友" }
+  { id: "academic", label: "学术科研" },
+  { id: "scholarship", label: "奖助贷工作" },
+  { id: "mentalhealth", label: "心理健康" }
 ];
 
-const alumni = [
-  {
-    name: "林建安",
-    batch: "2021",
-    company: "腾讯科技有限公司 · 算法工程师",
-    desc: "在校期间曾任计算机协会会长，毕业后直通腾讯WXG团队，主导微信AI搜索排序模型优化。"
-  },
-  {
-    name: "陈雨晴",
-    batch: "2022",
-    company: "清华大学计算机系 · 在读博士",
-    desc: "连续三年绩点专业第一，手握多项科创国家特等奖，目前在清华深研院深耕可解释三维重构算法。"
-  },
-  {
-    name: "黄天翔",
-    batch: "2023",
-    company: "数智云合科技 · 创始人 & CEO",
-    desc: "大三期间依托学院国家级大创项目开启孵化，毕业即拿到数百万天使轮投资，服务多地政务大屏研发。"
-  }
+const activityArticles = [
+  { title: "立足数智特色强化育人实效——大数据与人工智能学院召开学生工作会议", date: "2026-03-05" },
+  { title: "智暖腊巴，粥到情深——大数据与人工智能学院开展留校学生慰问活动", date: "2026-02-01" },
+  { title: `广东财经大学百千万工程团队“三下乡”：数字非遗赋能乡村振兴`, date: "2023-08-09" },
+  { title: `喜报||祝贺信息学院荣获2023年广东财经大学“四秩风华，弦歌传情”迎校庆师生合唱比赛三等奖`, date: "2023-06-09" },
+  { title: `优秀学生百人宣讲团||信息学院“榜样青春 奋进广财”优秀学生事迹宣讲`, date: "2023-06-06" },
+  { title: "喜报 || 信息学院羽毛球队荣获2023年广东财经大学羽毛球团体锦标赛亚军！", date: "2023-06-06" },
+  { title: "菁英训练营||信息学院第一届菁英训练营——创新策划组织培训", date: "2023-06-03" },
+  { title: "广东财经大学第十五届大学生学术科技季信息学院第二十三届IT文化节||网页设计大赛圆满结束！", date: "2023-06-02" },
+  { title: `“筐”出热血||信息学院班级篮球赛圆满结束`, date: "2023-05-31" }
+];
+
+const academicArticles = [
+  { title: `喜报|| 大数据与人工智能学院学子在第十九届“挑战杯”全国大学生课外学术科技作品竞赛“人工智能+”专项赛中荣获国赛三等奖`, date: "2025-11-11" },
+  { title: "喜报 || 大数据与人工智能学院学子在中国大学生计算机设计大赛中再创佳绩", date: "2025-09-13" },
+  { title: `信息学院在第十五届全国电子商务“创新、创意及创业”挑战赛广东赛区选拔赛中荣获佳绩`, date: "2025-08-23" },
+  { title: `信息学院在第十八届“挑战杯”广东省大学生课外学术科技作品竞赛中荣获佳绩`, date: "2025-08-23" },
+  { title: "信息学院王丽敏教授论文入选ESI全球Top1%高被引论文", date: "2025-08-23" },
+  { title: `信息学院在第十二届“挑战杯”大学生课外学术科技作品竞赛中荣获佳绩`, date: "2025-08-23" },
+  { title: `第十四届全国大学生电子商务“创新、创意及创业”挑战赛广东财经大学选拔赛圆满结束`, date: "2025-08-23" },
+  { title: `信息学院承办第十五届全国大学生电子商务“三创赛”校赛`, date: "2025-04-23" }
+];
+
+const scholarshipArticles = [
+  { title: "粤西家访暖人心，校友助力传真情——大数据与人工智能学院赴粤西开展家访工作", date: "2026-01-21" },
+  { title: `信息学院“榴园筑梦”宣讲团开展考研、就业经验分享会`, date: "2025-08-23" },
+  { title: "信息学院举办考研指导和经验分享会", date: "2025-08-23" },
+  { title: `信息学院举办大学生暑期“三下乡”社会实践活动经验交流会`, date: "2025-08-23" },
+  { title: "信息学院举办2023-2024院长奖学金评选答辩会", date: "2025-08-23" },
+  { title: "信息学院举办2023年大学生职业规划大赛", date: "2025-08-23" },
+  { title: "信息学院举办2022-2023学年院长奖学金答辩会", date: "2025-08-23" },
+  { title: "广东财经大学2023年青木奖学金答辩会顺利举行", date: "2025-08-23" },
+  { title: "信息学院举办2024年寒假线上和线下家访送温暖活动", date: "2025-08-22" },
+  { title: "信息学院研究生文佳豪获登2021-2022学年度研究生代表名录", date: "2023-05-06" }
+];
+
+const mentalHealthArticles = [
+  { title: "新学期·心力量·新成长——大数据与人工智能学院举办心理委员培训暨情景剧比赛动员会", date: "2026-04-08" },
+  { title: "筑牢心理防线 护航青春成长——信息学院佛山校区开展学生骨干心理健康专题培训会", date: "2025-09-11" },
+  { title: "信息学院召开2022级班委工作会议暨心理辅导站培训", date: "2025-09-11" },
+  { title: "信息学院心理工作站开展业务培训", date: "2025-09-11" },
+  { title: `信息学院团委联合“心职导航”辅导员工作室开展“悦纳自我，以爱育心”主题心理团体辅导活动`, date: "2025-09-11" },
+  { title: `信息学院开展“适应与核心能力提升”主题心理团体辅导活动`, date: "2025-09-11" },
+  { title: `信息学院开展“怀抱青春，以美润心”主题心理团体辅导活动`, date: "2025-09-11" },
+  { title: `信息学院开展“怀抱梦想，以德润心”主题心理团体辅导活动`, date: "2025-09-11" },
+  { title: `信息学院开展“怀抱绿意，以劳润心”主题心理团体辅导活动`, date: "2025-09-11" },
+  { title: "入学教育||学期伊始气象新，信念照耀新生行", date: "2025-09-11" },
+  { title: `信息学院举办“家长赋能，心理护航”专题讲座`, date: "2025-08-29" }
 ];
 
 const scrollToAnchor = (id: string) => {
@@ -152,7 +154,7 @@ const scrollToAnchor = (id: string) => {
     const elementRect = el.getBoundingClientRect().top;
     const elementPosition = elementRect - bodyRect;
     const offsetPosition = elementPosition - offset;
-    
+
     window.scrollTo({
       top: offsetPosition,
       behavior: "smooth"
@@ -162,7 +164,7 @@ const scrollToAnchor = (id: string) => {
 
 const handleScroll = () => {
   const scrollPosition = window.scrollY + 140;
-  
+
   for (const menu of subMenus) {
     const el = document.getElementById(menu.id);
     if (el) {
@@ -196,7 +198,9 @@ onUnmounted(() => {
 /* 子页横幅 Banner */
 .sub-banner {
   height: 280px;
-  background: var(--gradient-hero);
+  background-image: url('@/assets/images/subpage_banner_bg.png');
+  background-size: cover;
+  background-position: center;
   position: relative;
   display: flex;
   align-items: center;
@@ -207,6 +211,21 @@ onUnmounted(() => {
 .banner-inner {
   position: relative;
   z-index: 2;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.banner-left {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.banner-right {
+  display: flex;
+  align-items: center;
 }
 
 .banner-title {
@@ -214,30 +233,36 @@ onUnmounted(() => {
   font-size: 2.25rem;
   font-weight: 800;
   letter-spacing: 2px;
-  display: flex;
-  align-items: baseline;
+  display: inline;
   gap: 12px;
+  color: #fff;
+  text-shadow: -1px -1px 0 rgba(0,0,0,0.3), 1px -1px 0 rgba(0,0,0,0.3), -1px 1px 0 rgba(0,0,0,0.3), 1px 1px 0 rgba(0,0,0,0.3);
 }
 
 .banner-title span {
   font-size: 1.1rem;
-  opacity: 0.7;
+  opacity: 0.9;
   font-weight: 400;
+  color: #fff;
+  text-shadow: -1px -1px 0 rgba(0,0,0,0.3), 1px -1px 0 rgba(0,0,0,0.3), -1px 1px 0 rgba(0,0,0,0.3), 1px 1px 0 rgba(0,0,0,0.3);
 }
 
 .banner-desc {
   font-size: 1rem;
-  opacity: 0.9;
+  opacity: 0.95;
   letter-spacing: 4px;
   margin-top: 8px;
-  margin-bottom: 24px;
+  margin-bottom: 0;
+  color: #fff;
+  text-shadow: -1px -1px 0 rgba(0,0,0,0.3), 1px -1px 0 rgba(0,0,0,0.3), -1px 1px 0 rgba(0,0,0,0.3), 1px 1px 0 rgba(0,0,0,0.3);
 }
 
 .breadcrumb {
   font-size: 0.85rem;
   display: flex;
   gap: 8px;
-  opacity: 0.85;
+  opacity: 1;
+  color: white;
 }
 
 .breadcrumb a {
@@ -251,7 +276,8 @@ onUnmounted(() => {
 }
 
 .breadcrumb span.active {
-  color: var(--accent-color);
+  color: #fff;
+  text-shadow: -1px -1px 0 rgba(0,0,0,0.3), 1px -1px 0 rgba(0,0,0,0.3), -1px 1px 0 rgba(0,0,0,0.3), 1px 1px 0 rgba(0,0,0,0.3);
   font-weight: 600;
 }
 
@@ -291,11 +317,6 @@ onUnmounted(() => {
   padding-bottom: 12px;
 }
 
-.dark .sidebar-title {
-  color: white;
-  border-bottom-color: var(--highlight-color);
-}
-
 .sidebar-menu ul {
   display: flex;
   flex-direction: column;
@@ -329,12 +350,6 @@ onUnmounted(() => {
   font-weight: 700;
 }
 
-.dark .sidebar-menu button.active {
-  background-color: rgba(0, 174, 239, 0.08);
-  color: var(--highlight-color);
-  border-left-color: var(--highlight-color);
-}
-
 /* 右侧内容 */
 .content-pane {
   display: flex;
@@ -352,191 +367,55 @@ onUnmounted(() => {
   margin-bottom: 24px;
 }
 
-.dark .pane-section-title {
-  color: white;
-}
-
-.section-intro-text {
-  font-size: 0.95rem;
-  color: var(--text-secondary);
-  line-height: 1.6;
-  margin-bottom: 24px;
-}
-
-/* 团学活动卡片 */
-.activities-showcase {
+/* 文章列表 */
+.article-list {
   display: flex;
   flex-direction: column;
-  gap: 24px;
-}
-
-.act-card {
+  gap: 0;
   background-color: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius-lg);
   overflow: hidden;
   box-shadow: var(--shadow-sm);
-  display: grid;
-  grid-template-columns: 100px 1fr;
-  align-items: center;
 }
 
-.act-img-placeholder {
-  font-size: 3rem;
-  height: 100%;
+.article-item {
   display: flex;
   align-items: center;
-  justify-content: center;
-  background-color: rgba(26, 92, 175, 0.06);
-  color: var(--primary-color);
-  border-right: 1px solid var(--border-color);
-}
-
-.act-info {
-  padding: 24px 30px;
-}
-
-.act-info h4 {
-  font-family: var(--font-heading);
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: var(--secondary-color);
-  margin-bottom: 8px;
-}
-
-.dark .act-info h4 {
-  color: white;
-}
-
-.act-info p {
-  font-size: 0.85rem;
-  color: var(--text-secondary);
-  line-height: 1.6;
-}
-
-/* 竞赛获奖表格 */
-.awards-table-wrapper {
-  background-color: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius-lg);
-  overflow: hidden;
-  box-shadow: var(--shadow-sm);
-}
-
-.awards-table {
-  width: 100%;
-  border-collapse: collapse;
-  text-align: left;
-}
-
-.awards-table th, .awards-table td {
+  gap: 20px;
   padding: 18px 24px;
-  font-size: 0.9rem;
-}
-
-.awards-table th {
-  background-color: rgba(26, 92, 175, 0.04);
-  color: var(--secondary-color);
-  font-weight: 700;
-  border-bottom: 2px solid var(--border-color);
-}
-
-.dark class .awards-table th {
-  background-color: rgba(255, 255, 255, 0.03);
-  color: white;
-}
-
-.awards-table td {
   border-bottom: 1px solid var(--border-color);
+  transition: background-color 0.3s;
 }
 
-.awards-table tr:last-child td {
+.article-item:last-child {
   border-bottom: none;
 }
 
-.awards-table .year {
+.article-item:hover {
+  background-color: rgba(26, 92, 175, 0.03);
+}
+
+.article-date {
   font-family: var(--font-data);
-  font-weight: 700;
-  color: var(--primary-color);
-}
-
-.dark .awards-table .year {
-  color: var(--highlight-color);
-}
-
-.awards-table .event {
+  font-size: 0.85rem;
   font-weight: 600;
-  color: var(--text-primary);
-}
-
-.awards-table .award {
-  font-weight: 700;
-}
-
-.awards-table .award.gold { color: #EF4444; }
-.awards-table .award.silver { color: var(--accent-color); }
-
-/* 校友力量 */
-.alumni-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
-}
-
-.alumni-card {
-  background-color: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius-lg);
-  padding: 30px 24px;
-  box-shadow: var(--shadow-sm);
-  position: relative;
-  transition: transform 0.3s;
-}
-
-.alumni-card:hover {
-  transform: translateY(-4px);
-}
-
-.alumni-badge {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  background-color: rgba(200, 168, 78, 0.1);
   color: var(--accent-color);
-  font-size: 0.7rem;
-  font-weight: 700;
-  padding: 2px 8px;
-  border-radius: 4px;
+  flex-shrink: 0;
+  width: 90px;
 }
 
-.alumni-card h4 {
-  font-family: var(--font-heading);
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: var(--secondary-color);
-  margin-bottom: 4px;
+.article-title-link {
+  font-size: 0.95rem;
+  color: var(--text-primary);
+  text-decoration: none;
+  transition: color 0.3s;
+  line-height: 1.5;
 }
 
-.dark .alumni-card h4 {
-  color: white;
-}
-
-.alumni-company {
-  font-size: 0.8rem;
-  font-weight: 600;
+.article-title-link:hover {
   color: var(--primary-color);
-  display: block;
-  margin-bottom: 12px;
-}
-
-.dark .alumni-company {
-  color: var(--highlight-color);
-}
-
-.alumni-desc {
-  font-size: 0.8rem;
-  color: var(--text-secondary);
-  line-height: 1.6;
+  text-decoration: underline;
 }
 
 @media (max-width: 900px) {
@@ -547,16 +426,10 @@ onUnmounted(() => {
   .sidebar-menu {
     display: none;
   }
-  .act-card {
-    grid-template-columns: 1fr;
-  }
-  .act-img-placeholder {
-    height: 100px;
-    border-right: none;
-    border-bottom: 1px solid var(--border-color);
-  }
-  .alumni-grid {
-    grid-template-columns: 1fr;
+  .article-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
   }
 }
 </style>

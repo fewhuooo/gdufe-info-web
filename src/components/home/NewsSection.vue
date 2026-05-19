@@ -22,7 +22,7 @@
         </div>
         
         <!-- 圆形 MORE 按钮 -->
-        <router-link to="/about" class="circular-more-btn" title="查看更多">
+        <router-link :to="activeTab === 'headlines' ? '/news#headlines' : '/news#lectures'" class="circular-more-btn" title="查看更多">
           <span class="more-text">MORE</span>
           <svg class="arrow-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -38,9 +38,17 @@
           <div class="featured-card">
             <div class="featured-image-container">
               <div class="featured-image-overlay"></div>
-              <div class="featured-img-placeholder" :style="{ background: currentData.featured.bgGradient }">
-                <div class="abstract-dots"></div>
-                <div class="featured-logo-accent">GDUFE AI</div>
+              <div class="featured-img-placeholder">
+                <img 
+                  v-if="currentData.featured.image" 
+                  :src="currentData.featured.image" 
+                  class="news-img" 
+                  alt="Featured News"
+                />
+                <div v-else :style="{ background: currentData.featured.bgGradient, width: '100%', height: '100%' }">
+                  <div class="abstract-dots"></div>
+                  <div class="featured-logo-accent">GDUFE AI</div>
+                </div>
               </div>
               <!-- 浮动左下角 date Badge -->
               <div class="featured-date-badge">
@@ -64,14 +72,23 @@
           
           <!-- 右侧 2x2 宫格 -->
           <div class="grid-2x2-wrapper">
-            <div 
+            <router-link 
               v-for="card in currentData.grid" 
               :key="card.title" 
+              :to="card.link"
               class="grid-card-item"
             >
-              <div class="grid-card-img" :style="{ background: card.bgGradient }">
-                <div class="grid-card-mesh"></div>
-                <div class="grid-card-label">GDUFE</div>
+              <div class="grid-card-img">
+                <img 
+                  v-if="card.image" 
+                  :src="card.image" 
+                  class="news-img" 
+                  alt="News item"
+                />
+                <div v-else :style="{ background: card.bgGradient, width: '100%', height: '100%' }">
+                  <div class="grid-card-mesh"></div>
+                  <div class="grid-card-label">GDUFE</div>
+                </div>
               </div>
               
               <!-- 浮动左上角 date Badge (带边条，完全吻合截图) -->
@@ -84,7 +101,7 @@
               <div class="grid-text-overlay">
                 <h4 class="grid-card-title">{{ card.title }}</h4>
               </div>
-            </div>
+            </router-link>
           </div>
         </div>
       </transition>
@@ -94,6 +111,11 @@
 
 <script setup lang="ts">
 import { ref, computed } from "vue";
+import img1 from '@/assets/images/1.jpg';
+import img2 from '@/assets/images/2.jpg';
+import img3 from '@/assets/images/3.png';
+import img4 from '@/assets/images/4.jpg';
+import img5 from '@/assets/images/5.jpg';
 
 // 选项卡状态
 const activeTab = ref("headlines");
@@ -105,33 +127,42 @@ const headlinesData = {
     date: "05-18",
     year: "2026",
     summary: "在刚刚落幕的全国“挑战杯”决赛中，我院由张教授指导的“基于大模型的智慧金融风控系统”项目历经多轮激烈角逐，凭借卓越的算法创新性与广阔的应用前景，在数万个项目中脱颖而出，勇夺全国特等奖...",
-    link: "/about",
-    bgGradient: "linear-gradient(135deg, #10002b 0%, #3c096c 50%, #7b2cbf 100%)" // 尊贵的学术紫调
+    link: "/news/1",
+    bgGradient: "linear-gradient(135deg, #10002b 0%, #3c096c 50%, #7b2cbf 100%)", // 尊贵的学术紫调
+    image: img1
   },
   grid: [
     {
       title: "学院举办“腾讯之友——大数据与人工智能学院焕蓝梦想奖学金”颁奖仪式",
       date: "05-15",
       year: "2026",
-      bgGradient: "linear-gradient(135deg, #1d3557, #457b9d)"
+      link: "/news/2",
+      bgGradient: "linear-gradient(135deg, #1d3557, #457b9d)",
+      image: img2
     },
     {
       title: "大数据与人工智能学院召开2026届毕业生毕业设计（论文）线上线下动员大会",
       date: "05-12",
       year: "2026",
-      bgGradient: "linear-gradient(135deg, #2a9d8f, #264653)"
+      link: "/news/3",
+      bgGradient: "linear-gradient(135deg, #2a9d8f, #264653)",
+      image: img3
     },
     {
       title: "我院青年教师在国际顶级学术期刊IEEE Transactions发表自注意力建模高水平成果",
       date: "05-09",
       year: "2026",
-      bgGradient: "linear-gradient(135deg, #6b705c, #a5a58d)"
+      link: "/news/4",
+      bgGradient: "linear-gradient(135deg, #6b705c, #a5a58d)",
+      image: img4
     },
     {
       title: "学院与腾讯云科技签署战略协议，共建“大数据与生成式AI”校企联合实验室",
       date: "05-07",
       year: "2026",
-      bgGradient: "linear-gradient(135deg, #3d5a80, #98c1d9)"
+      link: "/news/5",
+      bgGradient: "linear-gradient(135deg, #3d5a80, #98c1d9)",
+      image: img5
     }
   ]
 };
@@ -143,33 +174,42 @@ const lecturesData = {
     date: "05-24",
     year: "2026",
     summary: "本期卓越讲坛特邀多模态机器学习与大语言模型领域的国际泰斗，围绕跨模态配准算法、大规模语义对齐及边缘部署等前沿议题开展多维度分享...",
-    link: "/about",
-    bgGradient: "linear-gradient(135deg, #03071e 0%, #6f1d1b 50%, #bb3e03 100%)" // 深红/砖红色调
+    link: "/news/6",
+    bgGradient: "linear-gradient(135deg, #03071e 0%, #6f1d1b 50%, #bb3e03 100%)", // 深红/砖红色调
+    image: img5
   },
   grid: [
     {
       title: "【卓越讲坛】高维统计学习与可解释深度神经网络的数理理论探索学术交流会",
       date: "05-20",
       year: "2026",
-      bgGradient: "linear-gradient(135deg, #2b2d42, #8d99ae)"
+      link: "/news/7",
+      bgGradient: "linear-gradient(135deg, #2b2d42, #8d99ae)",
+      image: img4
     },
     {
       title: "【学术会议】第七届智能算法与商业分析国际研讨会 (IEEE IABA 2026) 参会指南",
       date: "05-17",
       year: "2026",
-      bgGradient: "linear-gradient(135deg, #023047, #219ebc)"
+      link: "/news/8",
+      bgGradient: "linear-gradient(135deg, #023047, #219ebc)",
+      image: img3
     },
     {
       title: "【学术沙龙】知识图谱构建与大模型知识检索增强技术 (RAG) 专题交流研讨会",
       date: "05-12",
       year: "2026",
-      bgGradient: "linear-gradient(135deg, #4a4e69, #9a8c98)"
+      link: "/news/9",
+      bgGradient: "linear-gradient(135deg, #4a4e69, #9a8c98)",
+      image: img2
     },
     {
       title: "【名家论坛】基于生成式AI的医疗影像智能诊断系统与可信评测体系构建名家论坛",
       date: "05-08",
       year: "2026",
-      bgGradient: "linear-gradient(135deg, #386641, #6a994e)"
+      link: "/news/10",
+      bgGradient: "linear-gradient(135deg, #386641, #6a994e)",
+      image: img1
     }
   ]
 };

@@ -14,8 +14,8 @@
         
         <!-- 辅助操作按钮 -->
         <div class="banner-actions">
-          <button class="btn btn-primary btn-lg">了解学院</button>
-          <button class="btn btn-outline btn-lg">招生简章</button>
+          <router-link to="/about" class="btn btn-primary btn-lg">了解学院</router-link>
+          <router-link to="/admission" class="btn btn-outline btn-lg">招生简章</router-link>
         </div>
       </div>
     </div>
@@ -142,6 +142,8 @@
   font-weight: 600;
   border-radius: 4px;
   transition: all 0.3s;
+  text-decoration: none;
+  display: inline-block;
 }
 
 .btn-primary {
