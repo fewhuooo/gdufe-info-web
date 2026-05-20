@@ -87,7 +87,11 @@
 
             <!-- 消息文本 -->
             <div class="message-bubble">
-              <div class="bubble-content" v-html="formatMessageText(msg.text)"></div>
+              <div
+                class="bubble-content"
+                :class="{ typing: msg.role === 'assistant' && msg.isTyping }"
+                v-html="formatMessageText(msg.text)"
+              ></div>
             </div>
           </div>
 
@@ -162,8 +166,7 @@ let typewriterQueue = '';
 let activeTypewriterMessage: Message | null = null;
 let typewriterIdleResolver: (() => void) | null = null;
 
-const TYPEWRITER_INTERVAL_MS = 14;
-const TYPEWRITER_MAX_CHARS_PER_TICK = 3;
+const TYPEWRITER_INTERVAL_MS = 28;
 
 const emitClose = () => {
   abortActiveRequest();
@@ -190,6 +193,7 @@ const inputEl = ref<HTMLTextAreaElement | null>(null);
 interface Message {
   role: 'user' | 'assistant';
   text: string;
+  isTyping?: boolean;
 }
 
 const messages = ref<Message[]>([]);
@@ -315,13 +319,18 @@ const stepTypewriter = () => {
   typewriterTimer = null;
 
   if (!activeTypewriterMessage || typewriterQueue.length === 0) {
+    if (activeTypewriterMessage) {
+      activeTypewriterMessage.isTyping = false;
+    }
     resolveTypewriterIdle();
     return;
   }
 
-  const nextChars = Array.from(typewriterQueue).slice(0, TYPEWRITER_MAX_CHARS_PER_TICK).join('');
-  typewriterQueue = typewriterQueue.slice(nextChars.length);
-  appendAssistantText(activeTypewriterMessage, nextChars);
+  activeTypewriterMessage.isTyping = true;
+  const queueChars = Array.from(typewriterQueue);
+  const nextChar = queueChars.shift() || '';
+  typewriterQueue = queueChars.join('');
+  appendAssistantText(activeTypewriterMessage, nextChar);
 
   typewriterTimer = window.setTimeout(stepTypewriter, TYPEWRITER_INTERVAL_MS);
 };
@@ -330,11 +339,15 @@ const enqueueAssistantText = (message: Message, content: string) => {
   if (!content) return;
 
   if (activeTypewriterMessage !== message) {
+    if (activeTypewriterMessage) {
+      activeTypewriterMessage.isTyping = false;
+    }
     typewriterQueue = '';
     activeTypewriterMessage = message;
     resolveTypewriterIdle();
   }
 
+  message.isTyping = true;
   typewriterQueue += content;
 
   if (!typewriterTimer) {
@@ -359,6 +372,9 @@ const resetTypewriter = () => {
   }
 
   typewriterQueue = '';
+  if (activeTypewriterMessage) {
+    activeTypewriterMessage.isTyping = false;
+  }
   activeTypewriterMessage = null;
   resolveTypewriterIdle();
 };
@@ -840,6 +856,21 @@ const submitMessage = async () => {
 .bubble-content {
   font-size: 0.88rem;
   line-height: 1.6;
+}
+
+.bubble-content.typing::after {
+  content: '';
+  display: inline-block;
+  width: 1.5px;
+  height: 1em;
+  margin-left: 2px;
+  background-color: currentColor;
+  vertical-align: -0.15em;
+  animation: typing-cursor-blink 0.9s steps(2, start) infinite;
+}
+
+@keyframes typing-cursor-blink {
+  50% { opacity: 0; }
 }
 
 :deep(.bubble-content strong) {
