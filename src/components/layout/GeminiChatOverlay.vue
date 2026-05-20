@@ -229,6 +229,7 @@ interface Message {
   text: string;
   isTyping?: boolean;
   thoughts?: ThoughtBlock[];
+  sourceLinks?: SourceLink[];
 }
 
 interface ThoughtBlock {
@@ -241,6 +242,11 @@ interface ThoughtBlock {
 interface ChunkParts {
   content: string;
   reasoning: string;
+}
+
+interface SourceLink {
+  title: string;
+  url: string;
 }
 
 interface ThinkParseState {
@@ -311,6 +317,14 @@ const escapeHtml = (value: string) => {
   return value.replace(/[&<>"']/g, char => htmlEscapeMap[char]);
 };
 
+const escapeMarkdownLinkLabel = (value: string) => {
+  return value.replace(/[[\]\\]/g, '\\$&');
+};
+
+const escapeMarkdownLinkUrl = (value: string) => {
+  return value.replace(/[()\s]/g, char => encodeURIComponent(char));
+};
+
 const formatInlineMarkdown = (line: string) => {
   return escapeHtml(line)
     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
@@ -319,6 +333,45 @@ const formatInlineMarkdown = (line: string) => {
       const targetAttrs = safeHref.startsWith('/') ? '' : ' target="_blank" rel="noopener noreferrer"';
       return `<a href="${escapeHtml(safeHref)}" class="chat-embedded-link"${targetAttrs}>${label}</a>`;
     });
+};
+
+const splitMarkdownTableRow = (line: string) => {
+  const trimmed = line.trim().replace(/^\|/, '').replace(/\|$/, '');
+  return trimmed.split('|').map(cell => cell.trim());
+};
+
+const isMarkdownTableSeparator = (line: string) => {
+  const cells = splitMarkdownTableRow(line);
+  return cells.length > 1 && cells.every(cell => /^:?-{3,}:?$/.test(cell));
+};
+
+const isMarkdownTableRow = (line: string) => {
+  return line.includes('|') && splitMarkdownTableRow(line).length > 1;
+};
+
+const renderMarkdownTable = (rows: string[]) => {
+  const headerCells = splitMarkdownTableRow(rows[0]);
+  const alignments = splitMarkdownTableRow(rows[1]).map(cell => {
+    if (/^:-{3,}:$/.test(cell)) return 'center';
+    if (/^-{3,}:$/.test(cell)) return 'right';
+    return 'left';
+  });
+  const bodyRows = rows.slice(2);
+
+  const renderCell = (cell: string, index: number, tag: 'th' | 'td') => {
+    const align = alignments[index] || 'left';
+    return `<${tag} class="chat-table-cell align-${align}">${formatInlineMarkdown(cell)}</${tag}>`;
+  };
+
+  const head = `<thead><tr>${headerCells.map((cell, index) => renderCell(cell, index, 'th')).join('')}</tr></thead>`;
+  const body = bodyRows.length > 0
+    ? `<tbody>${bodyRows.map(row => {
+        const cells = splitMarkdownTableRow(row);
+        return `<tr>${cells.map((cell, index) => renderCell(cell, index, 'td')).join('')}</tr>`;
+      }).join('')}</tbody>`
+    : '';
+
+  return `<div class="chat-table-scroll"><table class="chat-table">${head}${body}</table></div>`;
 };
 
 // Safe lightweight Markdown rendering for knowledge-base answers.
@@ -333,16 +386,45 @@ const formatMessageText = (text: string) => {
     }
   };
 
-  text.split(/\r?\n/).forEach(line => {
+  const lines = text.split(/\r?\n/);
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index];
+    const headingMatch = line.match(/^(#{1,4})\s+(.+)$/);
+    if (headingMatch) {
+      flushList();
+      const level = Math.min(headingMatch[1].length, 4);
+      blocks.push(`<h${level} class="chat-heading chat-heading-${level}">${formatInlineMarkdown(headingMatch[2])}</h${level}>`);
+      continue;
+    }
+
+    if (
+      isMarkdownTableRow(line)
+      && index + 1 < lines.length
+      && isMarkdownTableSeparator(lines[index + 1])
+    ) {
+      flushList();
+      const tableRows = [line, lines[index + 1]];
+      index += 2;
+
+      while (index < lines.length && isMarkdownTableRow(lines[index])) {
+        tableRows.push(lines[index]);
+        index += 1;
+      }
+
+      index -= 1;
+      blocks.push(renderMarkdownTable(tableRows));
+      continue;
+    }
+
     const bulletMatch = line.match(/^\s*[-*]\s+(.+)$/);
     if (bulletMatch) {
       listItems.push(`<li class="chat-list-item">${formatInlineMarkdown(bulletMatch[1])}</li>`);
-      return;
+      continue;
     }
 
     flushList();
     blocks.push(line.trim().length > 0 ? formatInlineMarkdown(line) : '<span class="chat-break"></span>');
-  });
+  }
 
   flushList();
   return blocks.join('<br>');
@@ -361,6 +443,138 @@ const scrollToBottom = async (behavior: ScrollBehavior = 'smooth') => {
       behavior
     });
   }
+};
+
+const sourceFieldNames = new Set([
+  'source',
+  'sources',
+  'reference',
+  'references',
+  'citation',
+  'citations',
+  'document',
+  'documents',
+  'doc',
+  'docs',
+  'file',
+  'files',
+  'source_documents',
+  'source_nodes',
+  'retrieved_documents',
+  'context_documents'
+]);
+
+const linkFieldNames = [
+  'url',
+  'link',
+  'href',
+  'source_url',
+  'file_url',
+  'download_url',
+  'original_url',
+  'document_url',
+  'metadata_url'
+];
+
+const titleFieldNames = [
+  'title',
+  'name',
+  'filename',
+  'file_name',
+  'document_name',
+  'source',
+  'path',
+  'id'
+];
+
+const isSafeSourceUrl = (value: string) => {
+  return /^https?:\/\//i.test(value) || value.startsWith('/');
+};
+
+const normalizeSourceLink = (url: string, title?: string): SourceLink | null => {
+  const trimmedUrl = url.trim();
+  if (!isSafeSourceUrl(trimmedUrl)) return null;
+
+  const trimmedTitle = title?.trim() || trimmedUrl;
+  return {
+    title: trimmedTitle,
+    url: trimmedUrl
+  };
+};
+
+const collectSourceLinks = (payload: any, links: SourceLink[] = [], depth = 0): SourceLink[] => {
+  if (!payload || depth > 5) return links;
+
+  if (typeof payload === 'string') {
+    const directLink = normalizeSourceLink(payload);
+    if (directLink) links.push(directLink);
+    return links;
+  }
+
+  if (Array.isArray(payload)) {
+    payload.forEach(item => collectSourceLinks(item, links, depth + 1));
+    return links;
+  }
+
+  if (typeof payload !== 'object') return links;
+
+  const getFirstString = (names: string[]) => {
+    for (const name of names) {
+      const value = payload[name];
+      if (typeof value === 'string' && value.trim()) return value;
+    }
+
+    return '';
+  };
+
+  const url = getFirstString(linkFieldNames);
+  if (url) {
+    const sourceLink = normalizeSourceLink(url, getFirstString(titleFieldNames));
+    if (sourceLink) {
+      links.push(sourceLink);
+    }
+  }
+
+  Object.entries(payload).forEach(([key, value]) => {
+    if (sourceFieldNames.has(key) || key === 'metadata' || key === 'meta') {
+      collectSourceLinks(value, links, depth + 1);
+    }
+  });
+
+  return links.filter(Boolean);
+};
+
+const addSourceLinks = (message: Message, payload: any) => {
+  const sourceLinks = collectSourceLinks(payload);
+  if (sourceLinks.length === 0) return;
+
+  if (!message.sourceLinks) {
+    message.sourceLinks = [];
+  }
+
+  const seen = new Set(message.sourceLinks.map(link => link.url));
+  sourceLinks.forEach(link => {
+    if (seen.has(link.url)) return;
+    seen.add(link.url);
+    message.sourceLinks!.push(link);
+  });
+};
+
+const appendSourceLinks = (message: Message) => {
+  const links = message.sourceLinks || [];
+  if (links.length === 0) return;
+
+  const sourceMarkdown = [
+    '',
+    '#### 原文件链接',
+    ...links.map((link, index) => {
+      const label = escapeMarkdownLinkLabel(link.title || `原文件 ${index + 1}`);
+      const url = escapeMarkdownLinkUrl(link.url);
+      return `- [${label}](${url})`;
+    })
+  ].join('\n');
+
+  enqueueAssistantText(message, sourceMarkdown);
 };
 
 const isReasoningStreamEvent = (payload: any, eventName = '') => {
@@ -725,6 +939,7 @@ const processStreamEvent = (eventBlock: string, assistantMessage: Message, think
 
   try {
     const payload = JSON.parse(data);
+    addSourceLinks(assistantMessage, payload);
     const chunk = extractChunkParts(payload, streamEvent.eventName);
     if (chunk.reasoning || chunk.content) {
       isThinking.value = false;
@@ -773,7 +988,7 @@ const requestStreamingAnswer = async (query: string) => {
       throw new Error(errorDetail || `知识库服务返回 ${response.status}`);
     }
 
-    const assistantMessage = reactive<Message>({ role: 'assistant', text: '', thoughts: [] });
+    const assistantMessage = reactive<Message>({ role: 'assistant', text: '', thoughts: [], sourceLinks: [] });
     messages.value.push(assistantMessage);
     const thinkState = createThinkParseState();
 
@@ -781,11 +996,13 @@ const requestStreamingAnswer = async (query: string) => {
     if (contentType.includes('application/json')) {
       const payload = await response.json();
       isThinking.value = false;
+      addSourceLinks(assistantMessage, payload);
       const chunk = extractChunkParts(payload);
       appendReasoningText(assistantMessage, thinkState, chunk.reasoning);
       consumeTaggedThoughtMarkup(assistantMessage, thinkState, chunk.content);
       flushThinkParseState(assistantMessage, thinkState);
-      if (!assistantMessage.text.trim() && (assistantMessage.thoughts?.length || 0) === 0) {
+      appendSourceLinks(assistantMessage);
+      if (!assistantMessage.text.trim() && typewriterQueue.length === 0 && (assistantMessage.thoughts?.length || 0) === 0) {
         enqueueAssistantText(assistantMessage, '知识库服务暂未返回可展示的回答。');
       }
       await scrollToBottom();
@@ -831,6 +1048,7 @@ const requestStreamingAnswer = async (query: string) => {
     }
 
     flushThinkParseState(assistantMessage, thinkState);
+    appendSourceLinks(assistantMessage);
 
     if (!assistantMessage.text.trim() && typewriterQueue.length === 0 && (assistantMessage.thoughts?.length || 0) === 0) {
       assistantMessage.text = '知识库服务暂未返回可展示的回答。';
@@ -1340,6 +1558,31 @@ const submitMessage = async () => {
   font-weight: 700;
 }
 
+:deep(.chat-heading) {
+  margin: 10px 0 6px;
+  color: var(--secondary-color);
+  font-family: var(--font-heading);
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+:deep(.chat-heading:first-child) {
+  margin-top: 0;
+}
+
+:deep(.chat-heading-1) {
+  font-size: 1.05rem;
+}
+
+:deep(.chat-heading-2) {
+  font-size: 0.98rem;
+}
+
+:deep(.chat-heading-3),
+:deep(.chat-heading-4) {
+  font-size: 0.9rem;
+}
+
 :deep(.chat-list) {
   padding-left: 20px;
   margin: 8px 0;
@@ -1356,6 +1599,50 @@ const submitMessage = async () => {
   font-size: 0.85rem;
   line-height: 1.5;
   color: #1e293b; /* Explicit slate list item */
+}
+
+:deep(.chat-table-scroll) {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  margin: 10px 0;
+  border: 1px solid rgba(13, 27, 42, 0.08);
+  border-radius: 8px;
+  background-color: #ffffff;
+}
+
+:deep(.chat-table) {
+  width: 100%;
+  min-width: 320px;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+:deep(.chat-table th) {
+  background-color: #f8fafc;
+  color: var(--secondary-color);
+  font-weight: 800;
+}
+
+:deep(.chat-table-cell) {
+  padding: 8px 10px;
+  border-bottom: 1px solid rgba(13, 27, 42, 0.07);
+  color: #1e293b;
+  vertical-align: top;
+  white-space: nowrap;
+}
+
+:deep(.chat-table tbody tr:last-child .chat-table-cell) {
+  border-bottom: 0;
+}
+
+:deep(.chat-table-cell.align-center) {
+  text-align: center;
+}
+
+:deep(.chat-table-cell.align-right) {
+  text-align: right;
 }
 
 :deep(.chat-embedded-link) {
