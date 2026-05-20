@@ -149,7 +149,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, nextTick, onMounted, onUnmounted } from 'vue';
+import { computed, ref, reactive, nextTick, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 
 const emit = defineEmits(['close']);
@@ -426,7 +426,7 @@ const requestStreamingAnswer = async (query: string) => {
       throw new Error(errorDetail || `知识库服务返回 ${response.status}`);
     }
 
-    const assistantMessage: Message = { role: 'assistant', text: '' };
+    const assistantMessage = reactive<Message>({ role: 'assistant', text: '' });
     messages.value.push(assistantMessage);
     isThinking.value = false;
 
