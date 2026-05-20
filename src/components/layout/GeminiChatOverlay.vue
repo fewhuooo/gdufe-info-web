@@ -114,6 +114,7 @@
                   <div
                     v-show="thought.isOpen"
                     class="reasoning-content"
+                    :class="{ typing: thought.isTyping }"
                     v-html="formatMessageText(thought.text || '正在整理思路...')"
                   ></div>
                 </section>
@@ -199,8 +200,12 @@ let typewriterTimer: ReturnType<typeof window.setTimeout> | null = null;
 let typewriterQueue = '';
 let activeTypewriterMessage: Message | null = null;
 let typewriterIdleResolver: (() => void) | null = null;
+let thoughtTypewriterTimer: ReturnType<typeof window.setTimeout> | null = null;
+let thoughtTypewriterQueue: ThoughtTypewriterSegment[] = [];
+let activeTypewriterThought: ThoughtBlock | null = null;
 
 const TYPEWRITER_INTERVAL_MS = 28;
+const THOUGHT_TYPEWRITER_INTERVAL_MS = 18;
 
 const emitClose = () => {
   abortActiveRequest();
@@ -237,6 +242,7 @@ interface ThoughtBlock {
   text: string;
   isOpen: boolean;
   state: 'thinking' | 'finished';
+  isTyping?: boolean;
 }
 
 interface ChunkParts {
@@ -247,6 +253,11 @@ interface ChunkParts {
 interface SourceLink {
   title: string;
   url: string;
+}
+
+interface ThoughtTypewriterSegment {
+  thought: ThoughtBlock;
+  text: string;
 }
 
 interface ThinkParseState {
@@ -276,6 +287,7 @@ onMounted(() => {
 onUnmounted(() => {
   abortActiveRequest();
   resetTypewriter();
+  resetThoughtTypewriter();
   viewport.value?.removeEventListener('click', handleChatLinkClicks);
   window.removeEventListener('keydown', handleGlobalEsc);
 });
@@ -677,7 +689,8 @@ const createThoughtBlock = (message: Message) => {
     id: nextThoughtId++,
     text: '',
     isOpen: true,
-    state: 'thinking'
+    state: 'thinking',
+    isTyping: false
   };
 
   ensureThoughts(message).push(thought);
@@ -693,7 +706,68 @@ const appendThoughtText = (thought: ThoughtBlock, content: string) => {
 const finishThoughtBlock = (thought: ThoughtBlock | null) => {
   if (!thought) return;
   thought.state = 'finished';
-  thought.isOpen = false;
+  if (!thought.isTyping) {
+    thought.isOpen = false;
+  }
+};
+
+const finishActiveThoughtTypewriter = () => {
+  if (!activeTypewriterThought) return;
+
+  activeTypewriterThought.isTyping = false;
+  if (activeTypewriterThought.state === 'finished') {
+    activeTypewriterThought.isOpen = false;
+  }
+  activeTypewriterThought = null;
+};
+
+const stepThoughtTypewriter = () => {
+  thoughtTypewriterTimer = null;
+
+  const segment = thoughtTypewriterQueue[0];
+  if (!segment) {
+    finishActiveThoughtTypewriter();
+    return;
+  }
+
+  if (activeTypewriterThought !== segment.thought) {
+    finishActiveThoughtTypewriter();
+    activeTypewriterThought = segment.thought;
+  }
+
+  activeTypewriterThought.isOpen = true;
+  activeTypewriterThought.isTyping = true;
+  const queueChars = Array.from(segment.text);
+  const nextChar = queueChars.shift() || '';
+  segment.text = queueChars.join('');
+  if (segment.text.length === 0) {
+    thoughtTypewriterQueue.shift();
+  }
+  appendThoughtText(activeTypewriterThought, nextChar);
+
+  thoughtTypewriterTimer = window.setTimeout(stepThoughtTypewriter, THOUGHT_TYPEWRITER_INTERVAL_MS);
+};
+
+const enqueueThoughtText = (thought: ThoughtBlock, content: string) => {
+  if (!content) return;
+
+  thought.isOpen = true;
+  thought.isTyping = true;
+  thoughtTypewriterQueue.push({ thought, text: content });
+
+  if (!thoughtTypewriterTimer) {
+    thoughtTypewriterTimer = window.setTimeout(stepThoughtTypewriter, THOUGHT_TYPEWRITER_INTERVAL_MS);
+  }
+};
+
+const resetThoughtTypewriter = () => {
+  if (thoughtTypewriterTimer) {
+    window.clearTimeout(thoughtTypewriterTimer);
+    thoughtTypewriterTimer = null;
+  }
+
+  thoughtTypewriterQueue = [];
+  finishActiveThoughtTypewriter();
 };
 
 const createThinkParseState = (): ThinkParseState => ({
@@ -754,7 +828,7 @@ const appendReasoningText = (message: Message, state: ThinkParseState, content: 
     state.activeReasoningThought = createThoughtBlock(message);
   }
 
-  appendThoughtText(state.activeReasoningThought, content);
+  enqueueThoughtText(state.activeReasoningThought, content);
 };
 
 const consumeTaggedThoughtMarkup = (message: Message, state: ThinkParseState, content: string) => {
@@ -768,7 +842,7 @@ const consumeTaggedThoughtMarkup = (message: Message, state: ThinkParseState, co
       const endIndex = endTag?.index ?? -1;
 
       if (endIndex >= 0) {
-        appendThoughtText(state.activeTaggedThought!, state.buffer.slice(0, endIndex));
+        enqueueThoughtText(state.activeTaggedThought!, state.buffer.slice(0, endIndex));
         finishThoughtBlock(state.activeTaggedThought);
         state.activeTaggedThought = null;
         state.insideTaggedThought = false;
@@ -780,7 +854,7 @@ const consumeTaggedThoughtMarkup = (message: Message, state: ThinkParseState, co
       const consumable = tailLength > 0 ? state.buffer.slice(0, -tailLength) : state.buffer;
       if (!consumable) break;
 
-      appendThoughtText(state.activeTaggedThought!, consumable);
+      enqueueThoughtText(state.activeTaggedThought!, consumable);
       state.buffer = tailLength > 0 ? state.buffer.slice(-tailLength) : '';
       break;
     }
@@ -817,7 +891,7 @@ const consumeTaggedThoughtMarkup = (message: Message, state: ThinkParseState, co
 const flushThinkParseState = (message: Message, state: ThinkParseState) => {
   if (state.buffer) {
     if (state.insideTaggedThought && state.activeTaggedThought) {
-      appendThoughtText(state.activeTaggedThought, state.buffer);
+      enqueueThoughtText(state.activeTaggedThought, state.buffer);
     } else {
       enqueueAssistantText(message, state.buffer);
     }
@@ -962,6 +1036,7 @@ const requestStreamingAnswer = async (query: string) => {
   const controller = new AbortController();
   activeController = controller;
   resetTypewriter();
+  resetThoughtTypewriter();
   isThinking.value = true;
 
   try {
@@ -1018,6 +1093,8 @@ const requestStreamingAnswer = async (query: string) => {
     const decoder = new TextDecoder('utf-8');
     let buffer = '';
     let doneSignalReceived = false;
+    let pendingEventName = '';
+    let isRawTextStream = false;
 
     while (!doneSignalReceived) {
       const { done, value } = await reader.read();
@@ -1025,7 +1102,8 @@ const requestStreamingAnswer = async (query: string) => {
 
       const decodedChunk = decoder.decode(value, { stream: true });
 
-      if (!buffer && !/^(\s*:|\s*event:|\s*data:)/m.test(decodedChunk)) {
+      if (isRawTextStream || (!buffer && !/^(\s*:|\s*event:|\s*data:)/m.test(decodedChunk))) {
+        isRawTextStream = true;
         isThinking.value = false;
         consumeTaggedThoughtMarkup(assistantMessage, thinkState, decodedChunk);
       } else {
@@ -1034,9 +1112,37 @@ const requestStreamingAnswer = async (query: string) => {
         buffer = events.pop() || '';
 
         for (const eventBlock of events) {
+          pendingEventName = '';
           if (processStreamEvent(eventBlock, assistantMessage, thinkState)) {
             doneSignalReceived = true;
             break;
+          }
+        }
+
+        if (!doneSignalReceived && buffer.includes('\n')) {
+          const lines = buffer.split(/\r?\n/);
+          buffer = lines.pop() || '';
+
+          for (const line of lines) {
+            if (!line.trim() || line.startsWith(':')) continue;
+
+            if (line.startsWith('event:')) {
+              pendingEventName = line.slice(6).trim();
+              continue;
+            }
+
+            const eventBlock = line.startsWith('data:') && pendingEventName
+              ? `event: ${pendingEventName}\n${line}`
+              : line;
+
+            if (processStreamEvent(eventBlock, assistantMessage, thinkState)) {
+              doneSignalReceived = true;
+              break;
+            }
+
+            if (line.startsWith('data:')) {
+              pendingEventName = '';
+            }
           }
         }
       }
@@ -1044,7 +1150,10 @@ const requestStreamingAnswer = async (query: string) => {
 
     buffer += decoder.decode();
     if (buffer.trim()) {
-      processStreamEvent(buffer, assistantMessage, thinkState);
+      const finalEventBlock = pendingEventName && buffer.startsWith('data:')
+        ? `event: ${pendingEventName}\n${buffer}`
+        : buffer;
+      processStreamEvent(finalEventBlock, assistantMessage, thinkState);
     }
 
     flushThinkParseState(assistantMessage, thinkState);
@@ -1081,6 +1190,7 @@ const abortActiveRequest = () => {
     activeController = null;
   }
   resetTypewriter();
+  resetThoughtTypewriter();
   isThinking.value = false;
   isStreaming.value = false;
 };
@@ -1538,7 +1648,8 @@ const submitMessage = async () => {
   overflow-wrap: anywhere;
 }
 
-.bubble-content.typing::after {
+.bubble-content.typing::after,
+.reasoning-content.typing::after {
   content: '';
   display: inline-block;
   width: 1.5px;
