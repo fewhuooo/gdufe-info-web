@@ -77,6 +77,7 @@
           <div 
             v-for="(msg, index) in messages" 
             :key="index"
+            v-show="msg.role === 'user' || msg.text || msg.isTyping"
             class="message-wrapper"
             :class="msg.role"
           >
@@ -388,8 +389,13 @@ const processSseLine = (line: string, assistantMessage: Message) => {
   if (data === '[DONE]') return true;
 
   try {
-    enqueueAssistantText(assistantMessage, extractChunkText(JSON.parse(data)));
+    const chunkText = extractChunkText(JSON.parse(data));
+    if (chunkText) {
+      isThinking.value = false;
+      enqueueAssistantText(assistantMessage, chunkText);
+    }
   } catch {
+    isThinking.value = false;
     enqueueAssistantText(assistantMessage, data);
   }
 
@@ -428,11 +434,11 @@ const requestStreamingAnswer = async (query: string) => {
 
     const assistantMessage = reactive<Message>({ role: 'assistant', text: '' });
     messages.value.push(assistantMessage);
-    isThinking.value = false;
 
     const contentType = response.headers.get('content-type') || '';
     if (contentType.includes('application/json')) {
       const payload = await response.json();
+      isThinking.value = false;
       enqueueAssistantText(assistantMessage, extractChunkText(payload) || '知识库服务暂未返回可展示的回答。');
       await scrollToBottom();
       return;
