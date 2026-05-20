@@ -361,12 +361,21 @@ const scrollToBottom = async (behavior: ScrollBehavior = 'smooth') => {
 const extractChunkParts = (payload: any): ChunkParts => {
   const delta = payload?.delta || payload?.choices?.[0]?.delta;
   const message = payload?.message || payload?.choices?.[0]?.message;
+  const data = payload?.data;
+  const dataDelta = data?.delta || data?.choices?.[0]?.delta;
+  const dataMessage = data?.message || data?.choices?.[0]?.message;
 
   return {
     content: payload?.content
       || payload?.answer
+      || payload?.response
       || delta?.content
       || message?.content
+      || data?.content
+      || data?.answer
+      || data?.response
+      || dataDelta?.content
+      || dataMessage?.content
       || '',
     reasoning: payload?.reasoning_content
       || payload?.reasoning
@@ -377,6 +386,15 @@ const extractChunkParts = (payload: any): ChunkParts => {
       || delta?.thought
       || message?.reasoning_content
       || message?.reasoning
+      || data?.reasoning_content
+      || data?.reasoning
+      || data?.thought
+      || data?.think
+      || dataDelta?.reasoning_content
+      || dataDelta?.reasoning
+      || dataDelta?.thought
+      || dataMessage?.reasoning_content
+      || dataMessage?.reasoning
       || ''
   };
 };
@@ -426,11 +444,15 @@ const createThinkParseState = (): ThinkParseState => ({
   activeReasoningThought: null
 });
 
-const indexOfIgnoreCase = (source: string, search: string) => {
-  return source.toLowerCase().indexOf(search.toLowerCase());
+const findThinkStartTag = (value: string) => {
+  return value.match(/<think\b[^>]*>/i);
 };
 
-const getPotentialTagTailLength = (value: string, tag: string) => {
+const findThinkEndTag = (value: string) => {
+  return value.match(/<\/think\s*>/i);
+};
+
+const getPotentialLiteralTagTailLength = (value: string, tag: string) => {
   const lowerValue = value.toLowerCase();
   const lowerTag = tag.toLowerCase();
   const maxLength = Math.min(lowerValue.length, lowerTag.length - 1);
@@ -442,6 +464,28 @@ const getPotentialTagTailLength = (value: string, tag: string) => {
   }
 
   return 0;
+};
+
+const getPotentialThinkTagTailLength = (value: string) => {
+  const literalTailLength = Math.max(
+    getPotentialLiteralTagTailLength(value, '<think>'),
+    getPotentialLiteralTagTailLength(value, '</think>')
+  );
+
+  const lastOpenBracket = value.lastIndexOf('<');
+  if (lastOpenBracket < 0) return literalTailLength;
+
+  const tail = value.slice(lastOpenBracket).toLowerCase();
+  if (
+    '<think'.startsWith(tail)
+    || '</think'.startsWith(tail)
+    || /^<think\b[^>]*$/.test(tail)
+    || /^<\/think\s*$/.test(tail)
+  ) {
+    return Math.max(literalTailLength, value.length - lastOpenBracket);
+  }
+
+  return literalTailLength;
 };
 
 const appendReasoningText = (message: Message, state: ThinkParseState, content: string) => {
@@ -461,18 +505,19 @@ const consumeTaggedThoughtMarkup = (message: Message, state: ThinkParseState, co
 
   while (state.buffer.length > 0) {
     if (state.insideTaggedThought) {
-      const endIndex = indexOfIgnoreCase(state.buffer, '</think>');
+      const endTag = findThinkEndTag(state.buffer);
+      const endIndex = endTag?.index ?? -1;
 
       if (endIndex >= 0) {
         appendThoughtText(state.activeTaggedThought!, state.buffer.slice(0, endIndex));
         finishThoughtBlock(state.activeTaggedThought);
         state.activeTaggedThought = null;
         state.insideTaggedThought = false;
-        state.buffer = state.buffer.slice(endIndex + '</think>'.length);
+        state.buffer = state.buffer.slice(endIndex + endTag![0].length);
         continue;
       }
 
-      const tailLength = getPotentialTagTailLength(state.buffer, '</think>');
+      const tailLength = getPotentialThinkTagTailLength(state.buffer);
       const consumable = tailLength > 0 ? state.buffer.slice(0, -tailLength) : state.buffer;
       if (!consumable) break;
 
@@ -481,7 +526,8 @@ const consumeTaggedThoughtMarkup = (message: Message, state: ThinkParseState, co
       break;
     }
 
-    const startIndex = indexOfIgnoreCase(state.buffer, '<think>');
+    const startTag = findThinkStartTag(state.buffer);
+    const startIndex = startTag?.index ?? -1;
 
     if (startIndex >= 0) {
       const answerText = state.buffer.slice(0, startIndex);
@@ -493,11 +539,11 @@ const consumeTaggedThoughtMarkup = (message: Message, state: ThinkParseState, co
 
       state.activeTaggedThought = createThoughtBlock(message);
       state.insideTaggedThought = true;
-      state.buffer = state.buffer.slice(startIndex + '<think>'.length);
+      state.buffer = state.buffer.slice(startIndex + startTag![0].length);
       continue;
     }
 
-    const tailLength = getPotentialTagTailLength(state.buffer, '<think>');
+    const tailLength = getPotentialThinkTagTailLength(state.buffer);
     const consumable = tailLength > 0 ? state.buffer.slice(0, -tailLength) : state.buffer;
     if (!consumable) break;
 
@@ -598,7 +644,13 @@ const resetTypewriter = () => {
 
 const processSseLine = (line: string, assistantMessage: Message, thinkState: ThinkParseState) => {
   const trimmed = line.trim();
-  if (!trimmed || !trimmed.startsWith('data:')) return false;
+  if (!trimmed || trimmed.startsWith(':')) return false;
+
+  if (!trimmed.startsWith('data:')) {
+    isThinking.value = false;
+    consumeTaggedThoughtMarkup(assistantMessage, thinkState, `${line}\n`);
+    return false;
+  }
 
   const data = trimmed.slice(5).trim();
   if (!data) return false;
