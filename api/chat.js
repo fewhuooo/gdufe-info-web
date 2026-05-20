@@ -14,6 +14,9 @@ module.exports = async function handler(req, res) {
   }
 
   try {
+    res.setHeader('Cache-Control', 'no-cache, no-transform');
+    res.setHeader('Connection', 'keep-alive');
+
     const upstreamResponse = await fetch(
       process.env.EXTERNAL_CHAT_API_URL || DEFAULT_EXTERNAL_CHAT_API_URL,
       {
@@ -31,6 +34,16 @@ module.exports = async function handler(req, res) {
     const contentType = upstreamResponse.headers.get('content-type');
     if (contentType) {
       res.setHeader('Content-Type', contentType);
+    }
+
+    if (!upstreamResponse.ok) {
+      const errorText = await upstreamResponse.text().catch(() => '');
+      res.status(upstreamResponse.status).json({
+        error: 'External chat API failed',
+        status: upstreamResponse.status,
+        detail: errorText.slice(0, 500)
+      });
+      return;
     }
 
     if (!upstreamResponse.body) {
@@ -51,6 +64,9 @@ module.exports = async function handler(req, res) {
     res.end();
   } catch (error) {
     console.error('Chat proxy failed:', error);
-    res.status(502).json({ error: 'Chat proxy failed' });
+    res.status(502).json({
+      error: 'Chat proxy failed',
+      detail: error instanceof Error ? error.message : String(error)
+    });
   }
 };

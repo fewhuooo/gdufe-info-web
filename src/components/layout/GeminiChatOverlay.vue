@@ -434,7 +434,6 @@ const requestStreamingAnswer = async (query: string) => {
     if (contentType.includes('application/json')) {
       const payload = await response.json();
       enqueueAssistantText(assistantMessage, extractChunkText(payload) || '知识库服务暂未返回可展示的回答。');
-      await waitForTypewriterIdle();
       await scrollToBottom();
       return;
     }
@@ -470,9 +469,7 @@ const requestStreamingAnswer = async (query: string) => {
       processSseLine(buffer, assistantMessage);
     }
 
-    await waitForTypewriterIdle();
-
-    if (!assistantMessage.text.trim()) {
+    if (!assistantMessage.text.trim() && typewriterQueue.length === 0) {
       assistantMessage.text = '知识库服务暂未返回可展示的回答。';
     }
 
@@ -483,7 +480,9 @@ const requestStreamingAnswer = async (query: string) => {
     console.error('AI chat request failed:', error);
     messages.value.push({
       role: 'assistant',
-      text: '抱歉，知识库问答服务暂时无法响应。请稍后再试，或联系网站管理员检查接口配置。'
+      text: error instanceof Error && error.message
+        ? `抱歉，知识库问答服务暂时无法响应：${error.message}`
+        : '抱歉，知识库问答服务暂时无法响应。请稍后再试，或联系网站管理员检查接口配置。'
     });
     await scrollToBottom();
   } finally {
