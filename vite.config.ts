@@ -12,6 +12,13 @@ export default defineConfig({
   },
   server: {
     port: 5173,
-    open: false
+    open: false,
+    proxy: {
+      '/api': {
+        target: process.env.VITE_DEV_API_PROXY_TARGET || 'https://gdufe-info-web.vercel.app',
+        changeOrigin: true,
+        secure: true
+      }
+    }
   }
 })

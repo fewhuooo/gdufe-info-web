@@ -1,27 +1,49 @@
 <template>
-  <div class="gemini-chat-overlay" :class="{ 'fade-out-active': isClosing }" @click.self="emitClose">
-    <!-- 右侧简约弹出面板 (极简浅色学术风) -->
-    <div class="gemini-sidebar-panel" :class="{ 'slide-out-active': isClosing }">
+  <div class="gemini-chat-overlay" :class="{ 'fade-out-active': isClosing }">
+    <div
+      class="gemini-sidebar-panel"
+      :class="{ 'slide-out-active': isClosing, expanded: isExpanded }"
+    >
       
       <!-- 简约页眉 -->
       <header class="sidebar-header">
         <div class="brand-group">
           <div class="spark-logo-animate">
-            <svg viewBox="0 0 24 24" fill="currentColor" class="gemini-sparkle">
-              <path d="M12 2L14.8 9.2L22 12L14.8 14.8L12 22L9.2 14.8L2 12L9.2 9.2L12 2Z"></path>
-            </svg>
+            <img src="@/assets/images/ai-chat-avatar.png" alt="" class="gemini-sparkle" />
           </div>
           <div class="brand-text">
-            <h3 class="brand-name">学院数智 AI 助手</h3>
+            <h3 class="brand-name">广财大 AI 智能问答</h3>
           </div>
         </div>
         
-        <button class="close-panel-btn" @click="emitClose" title="关闭助手 (Esc)">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <div class="window-actions">
+          <button
+            class="panel-action-btn"
+            @click="toggleExpanded"
+            :title="isExpanded ? '还原小窗' : '放大窗口'"
+            :aria-label="isExpanded ? '还原 AI 问答小窗' : '放大 AI 问答窗口'"
+          >
+            <svg v-if="!isExpanded" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3">
+              <path d="M8 3H3v5"></path>
+              <path d="M16 3h5v5"></path>
+              <path d="M21 16v5h-5"></path>
+              <path d="M3 16v5h5"></path>
+            </svg>
+            <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3">
+              <path d="M8 3v5H3"></path>
+              <path d="M16 3v5h5"></path>
+              <path d="M21 16h-5v5"></path>
+              <path d="M3 16h5v5"></path>
+            </svg>
+          </button>
+
+          <button class="panel-action-btn" @click="emitClose" title="关闭助手 (Esc)" aria-label="关闭 AI 问答">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
             <line x1="18" y1="6" x2="6" y2="18"></line>
             <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
-        </button>
+            </svg>
+          </button>
+        </div>
       </header>
 
       <!-- 聊天视口区域 -->
@@ -30,17 +52,21 @@
         <div v-if="messages.length === 0" class="welcome-screen">
           <h2 class="welcome-title">您好！</h2>
           <p class="welcome-intro">
-            我是大数据与人工智能学院的数智助手。有什么我可以帮您的？您可以直接在下方输入框提问，或者选择以下核心问题：
+            我已接入学校知识库问答服务。您可以咨询课程、招生、学院概况、校园服务等问题。
           </p>
           
           <!-- 快捷提问 (精美行内微晶卡片) -->
           <div class="suggested-chips-wrapper">
-            <button class="chip-btn" @click="submitSuggested('介绍一下大数据与人工智能学院')">
-              <span class="chip-text">介绍学院基本概况</span>
+            <button class="chip-btn" @click="submitSuggested('数智学院推免工作实施细则有哪些要求？')">
+              <span class="chip-text">推免工作实施细则</span>
               <span class="chip-arrow">→</span>
             </button>
-            <button class="chip-btn" @click="submitSuggested('关于学院2026年硕士研究生考试调剂和奖学金政策')">
-              <span class="chip-text">了解考研与调剂政策</span>
+            <button class="chip-btn" @click="submitSuggested('介绍一下数智学院导师信息')">
+              <span class="chip-text">导师信息查询</span>
+              <span class="chip-arrow">→</span>
+            </button>
+            <button class="chip-btn" @click="submitSuggested('人工智能专业人才培养方案是什么？')">
+              <span class="chip-text">人工智能专业培养方案</span>
               <span class="chip-arrow">→</span>
             </button>
           </div>
@@ -51,28 +77,62 @@
           <div 
             v-for="(msg, index) in messages" 
             :key="index"
+            v-show="msg.role === 'user' || msg.text || msg.isTyping || msg.thoughts?.length"
             class="message-wrapper"
             :class="msg.role"
           >
             <!-- AI Spark 头像 (仅助手显示) -->
             <div class="message-avatar" v-if="msg.role === 'assistant'">
-              <svg viewBox="0 0 24 24" fill="currentColor" class="avatar-spark">
-                <path d="M12 2L14.8 9.2L22 12L14.8 14.8L12 22L9.2 14.8L2 12L9.2 9.2L12 2Z"></path>
-              </svg>
+              <img src="@/assets/images/ai-chat-avatar.png" alt="" class="avatar-spark" />
             </div>
 
             <!-- 消息文本 -->
             <div class="message-bubble">
-              <div class="bubble-content" v-html="formatMessageText(msg.text)"></div>
+              <div v-if="msg.role === 'assistant' && msg.thoughts?.length" class="reasoning-stack">
+                <section
+                  v-for="(thought, thoughtIndex) in msg.thoughts"
+                  :key="thought.id"
+                  class="reasoning-block"
+                  :class="{ open: thought.isOpen, active: thought.state === 'thinking' }"
+                >
+                  <button
+                    type="button"
+                    class="reasoning-toggle"
+                    :aria-expanded="thought.isOpen"
+                    @click="toggleThoughtBlock(thought)"
+                  >
+                    <span class="reasoning-status-dot"></span>
+                    <span class="reasoning-title">
+                      {{ thought.state === 'thinking' ? '正在思考' : '已深度思考' }}
+                    </span>
+                    <span v-if="(msg.thoughts?.length || 0) > 1" class="reasoning-index">
+                      {{ thoughtIndex + 1 }}/{{ msg.thoughts?.length }}
+                    </span>
+                    <ChevronDown class="reasoning-chevron" aria-hidden="true" />
+                  </button>
+
+                  <div
+                    v-show="thought.isOpen"
+                    class="reasoning-content"
+                    :class="{ typing: thought.isTyping }"
+                    v-html="formatMessageText(thought.text || '正在整理思路...')"
+                  ></div>
+                </section>
+              </div>
+
+              <div
+                v-if="msg.text || msg.isTyping"
+                class="bubble-content"
+                :class="{ typing: msg.role === 'assistant' && msg.isTyping }"
+                v-html="formatMessageText(msg.text)"
+              ></div>
             </div>
           </div>
 
           <!-- AI 等待思考态 -->
           <div v-if="isThinking" class="message-wrapper assistant thinking">
             <div class="message-avatar">
-              <svg viewBox="0 0 24 24" fill="currentColor" class="avatar-spark spin-spark">
-                <path d="M12 2L14.8 9.2L22 12L14.8 14.8L12 22L9.2 14.8L2 12L9.2 9.2L12 2Z"></path>
-              </svg>
+              <img src="@/assets/images/ai-chat-avatar.png" alt="" class="avatar-spark spin-spark" />
             </div>
             <div class="message-bubble thinking-bubble">
               <div class="gemini-shimmer-loader">
@@ -93,7 +153,8 @@
             placeholder="输入您的问题..." 
             rows="2"
             maxlength="200"
-            @keydown.prevent.enter="submitMessage"
+            :disabled="isBusy"
+            @keydown="handleInputKeydown"
             ref="inputEl"
           ></textarea>
           
@@ -102,7 +163,8 @@
             <span class="input-char-count">{{ inputQuery.length }}/200</span>
             <button 
               class="send-message-btn" 
-              :class="{ active: inputQuery.trim().length > 0 }"
+              :class="{ active: inputQuery.trim().length > 0 && !isBusy }"
+              :disabled="isBusy || inputQuery.trim().length === 0"
               @click="submitMessage"
               title="发送"
             >
@@ -113,6 +175,7 @@
             </button>
           </div>
         </div>
+        <p class="assistant-provider">由 gdufe-agent.utopiacd.online 提供服务支持</p>
       </footer>
 
     </div>
@@ -120,25 +183,48 @@
 </template>
 
 <script setup lang="ts">
-import { ref, nextTick, onMounted, onUnmounted } from 'vue';
+import { computed, ref, reactive, nextTick, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
+import { ChevronDown } from 'lucide-vue-next';
 
 const emit = defineEmits(['close']);
 const router = useRouter();
 
+const CHAT_API_URL = (import.meta.env.VITE_CHAT_API_URL as string | undefined) || '/api/chat';
+
 // Exit animation controls
 const isClosing = ref(false);
+const isExpanded = ref(false);
+let activeController: AbortController | null = null;
+let typewriterTimer: ReturnType<typeof window.setTimeout> | null = null;
+let typewriterQueue = '';
+let activeTypewriterMessage: Message | null = null;
+let typewriterIdleResolver: (() => void) | null = null;
+let thoughtTypewriterTimer: ReturnType<typeof window.setTimeout> | null = null;
+let thoughtTypewriterQueue: ThoughtTypewriterSegment[] = [];
+let activeTypewriterThought: ThoughtBlock | null = null;
+
+const TYPEWRITER_INTERVAL_MS = 28;
+const THOUGHT_TYPEWRITER_INTERVAL_MS = 18;
 
 const emitClose = () => {
+  abortActiveRequest();
   isClosing.value = true;
   setTimeout(() => {
     emit('close');
   }, 350); // Matches sliding transition speed
 };
 
+const toggleExpanded = () => {
+  isExpanded.value = !isExpanded.value;
+  void scrollToBottom();
+};
+
 // UI States
 const inputQuery = ref('');
 const isThinking = ref(false);
+const isStreaming = ref(false);
+const isBusy = computed(() => isThinking.value || isStreaming.value);
 const viewport = ref<HTMLDivElement | null>(null);
 const inputEl = ref<HTMLTextAreaElement | null>(null);
 
@@ -146,9 +232,48 @@ const inputEl = ref<HTMLTextAreaElement | null>(null);
 interface Message {
   role: 'user' | 'assistant';
   text: string;
+  isTyping?: boolean;
+  thoughts?: ThoughtBlock[];
+  sourceLinks?: SourceLink[];
+}
+
+interface ThoughtBlock {
+  id: number;
+  text: string;
+  isOpen: boolean;
+  state: 'thinking' | 'finished';
+  isTyping?: boolean;
+}
+
+interface ChunkParts {
+  content: string;
+  reasoning: string;
+}
+
+interface SourceLink {
+  title: string;
+  url: string;
+}
+
+interface ThoughtTypewriterSegment {
+  thought: ThoughtBlock;
+  text: string;
+}
+
+interface ThinkParseState {
+  buffer: string;
+  insideTaggedThought: boolean;
+  activeTaggedThought: ThoughtBlock | null;
+  activeReasoningThought: ThoughtBlock | null;
+}
+
+interface StreamEvent {
+  eventName: string;
+  data: string;
 }
 
 const messages = ref<Message[]>([]);
+let nextThoughtId = 1;
 
 // Focus input on mount
 onMounted(() => {
@@ -160,6 +285,9 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
+  abortActiveRequest();
+  resetTypewriter();
+  resetThoughtTypewriter();
   viewport.value?.removeEventListener('click', handleChatLinkClicks);
   window.removeEventListener('keydown', handleGlobalEsc);
 });
@@ -186,81 +314,898 @@ const handleChatLinkClicks = (e: MouseEvent) => {
 // Submit card suggestion
 const submitSuggested = (query: string) => {
   inputQuery.value = query;
-  submitMessage();
+  void submitMessage();
 };
 
-// Markdown parsing simple regex
-const formatMessageText = (text: string) => {
-  let formatted = text
+const htmlEscapeMap: Record<string, string> = {
+  '&': '&amp;',
+  '<': '&lt;',
+  '>': '&gt;',
+  '"': '&quot;',
+  "'": '&#39;'
+};
+
+const escapeHtml = (value: string) => {
+  return value.replace(/[&<>"']/g, char => htmlEscapeMap[char]);
+};
+
+const escapeMarkdownLinkLabel = (value: string) => {
+  return value.replace(/[[\]\\]/g, '\\$&');
+};
+
+const escapeMarkdownLinkUrl = (value: string) => {
+  return value.replace(/[()\s]/g, char => encodeURIComponent(char));
+};
+
+const formatInlineMarkdown = (line: string) => {
+  return escapeHtml(line)
     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-    .replace(/^- (.*?)$/gm, '<li class="chat-list-item">$1</li>')
-    .replace(/((?:<li class="chat-list-item">.*?<\/li>\s*)+)/g, '<ul class="chat-list">$1</ul>')
-    .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" class="chat-embedded-link">$1</a>');
-  return formatted;
+    .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+|\/[^\s)]*)\)/g, (_match, label: string, href: string) => {
+      const safeHref = href.startsWith('/') || /^https?:\/\//.test(href) ? href : '#';
+      const targetAttrs = safeHref.startsWith('/') ? '' : ' target="_blank" rel="noopener noreferrer"';
+      return `<a href="${escapeHtml(safeHref)}" class="chat-embedded-link"${targetAttrs}>${label}</a>`;
+    });
+};
+
+const splitMarkdownTableRow = (line: string) => {
+  const trimmed = line.trim().replace(/^\|/, '').replace(/\|$/, '');
+  return trimmed.split('|').map(cell => cell.trim());
+};
+
+const isMarkdownTableSeparator = (line: string) => {
+  const cells = splitMarkdownTableRow(line);
+  return cells.length > 1 && cells.every(cell => /^:?-{3,}:?$/.test(cell));
+};
+
+const isMarkdownTableRow = (line: string) => {
+  return line.includes('|') && splitMarkdownTableRow(line).length > 1;
+};
+
+const renderMarkdownTable = (rows: string[]) => {
+  const headerCells = splitMarkdownTableRow(rows[0]);
+  const alignments = splitMarkdownTableRow(rows[1]).map(cell => {
+    if (/^:-{3,}:$/.test(cell)) return 'center';
+    if (/^-{3,}:$/.test(cell)) return 'right';
+    return 'left';
+  });
+  const bodyRows = rows.slice(2);
+
+  const renderCell = (cell: string, index: number, tag: 'th' | 'td') => {
+    const align = alignments[index] || 'left';
+    return `<${tag} class="chat-table-cell align-${align}">${formatInlineMarkdown(cell)}</${tag}>`;
+  };
+
+  const head = `<thead><tr>${headerCells.map((cell, index) => renderCell(cell, index, 'th')).join('')}</tr></thead>`;
+  const body = bodyRows.length > 0
+    ? `<tbody>${bodyRows.map(row => {
+        const cells = splitMarkdownTableRow(row);
+        return `<tr>${cells.map((cell, index) => renderCell(cell, index, 'td')).join('')}</tr>`;
+      }).join('')}</tbody>`
+    : '';
+
+  return `<div class="chat-table-scroll"><table class="chat-table">${head}${body}</table></div>`;
+};
+
+// Safe lightweight Markdown rendering for knowledge-base answers.
+const formatMessageText = (text: string) => {
+  const blocks: string[] = [];
+  let listItems: string[] = [];
+
+  const flushList = () => {
+    if (listItems.length > 0) {
+      blocks.push(`<ul class="chat-list">${listItems.join('')}</ul>`);
+      listItems = [];
+    }
+  };
+
+  const lines = text.split(/\r?\n/);
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index];
+    const headingMatch = line.match(/^(#{1,4})\s+(.+)$/);
+    if (headingMatch) {
+      flushList();
+      const level = Math.min(headingMatch[1].length, 4);
+      blocks.push(`<h${level} class="chat-heading chat-heading-${level}">${formatInlineMarkdown(headingMatch[2])}</h${level}>`);
+      continue;
+    }
+
+    if (
+      isMarkdownTableRow(line)
+      && index + 1 < lines.length
+      && isMarkdownTableSeparator(lines[index + 1])
+    ) {
+      flushList();
+      const tableRows = [line, lines[index + 1]];
+      index += 2;
+
+      while (index < lines.length && isMarkdownTableRow(lines[index])) {
+        tableRows.push(lines[index]);
+        index += 1;
+      }
+
+      index -= 1;
+      blocks.push(renderMarkdownTable(tableRows));
+      continue;
+    }
+
+    const bulletMatch = line.match(/^\s*[-*]\s+(.+)$/);
+    if (bulletMatch) {
+      listItems.push(`<li class="chat-list-item">${formatInlineMarkdown(bulletMatch[1])}</li>`);
+      continue;
+    }
+
+    flushList();
+    blocks.push(line.trim().length > 0 ? formatInlineMarkdown(line) : '<span class="chat-break"></span>');
+  }
+
+  flushList();
+  return blocks.join('<br>');
+};
+
+const toggleThoughtBlock = (thought: ThoughtBlock) => {
+  thought.isOpen = !thought.isOpen;
 };
 
 // Scroll to viewport bottom
-const scrollToBottom = async () => {
+const scrollToBottom = async (behavior: ScrollBehavior = 'smooth') => {
   await nextTick();
   if (viewport.value) {
     viewport.value.scrollTo({
       top: viewport.value.scrollHeight,
-      behavior: 'smooth'
+      behavior
     });
   }
 };
 
-// AI simulated response logic
-const simulateAiResponse = (userText: string) => {
-  isThinking.value = true;
-  scrollToBottom();
+const sourceFieldNames = new Set([
+  'source',
+  'sources',
+  'reference',
+  'references',
+  'citation',
+  'citations',
+  'document',
+  'documents',
+  'doc',
+  'docs',
+  'file',
+  'files',
+  'source_documents',
+  'source_nodes',
+  'retrieved_documents',
+  'context_documents'
+]);
 
-  let responseText = '';
-  const text = userText.toLowerCase();
+const linkFieldNames = [
+  'url',
+  'link',
+  'href',
+  'source_url',
+  'file_url',
+  'download_url',
+  'original_url',
+  'document_url',
+  'metadata_url'
+];
 
-  if (text.includes('介绍') || text.includes('学院') || text.includes('概况') || text.includes('关于')) {
-    responseText = "**广东财经大学大数据与人工智能学院**是一所紧跟粤港澳大湾区数字化产业需求建设的高起点、强特色二级学院。\n- **学科专业特色**：聚焦“人工智能+”与“大数据+”的商科交叉特色，拥有一流的现代化科研算力中心与重点机房。\n- **学科研究平台**：学院设有广东省数智技术与商业分析重点实验室，产学联合孵化环境极为突出。\n- **海归师资力量**：汇聚了数十名海外名校博士、IEEE资深专家及行业杰出学者授课授业，践行产教联合育人模式。\n*详情参考以下链接：*\n👉 [查看学院简介](/about) | 👉 [了解学科建设](/about#discipline)";
-  } 
-  else if (text.includes('招生') || text.includes('调剂') || text.includes('考研') || text.includes('学费') || text.includes('专业') || text.includes('奖学金') || text.includes('硕士')) {
-    responseText = "**学院2026年硕士研究生招生与调剂指南**：\n- **招生专业目录**：\n  1. *智能科学与技术（学硕）*：初试统考数一、英一，专业自命题科目为《812 计算机学科基础》。\n  2. *计算机技术（专硕）*：初试统考数二、英二，自命题科目为《812 计算机学科基础》。\n- **调剂与机试安排**：\n  - 国家调剂系统通常于 4 月中旬开放，复试包括专业代码机试 (30%)、线下专家综合面试 (50%) 及英语口语听力 (20%)。\n- **科创奖学金政策**：\n  - 除常规国家和学校助学外，设有 *腾讯之友社会奖学金*、*数智英才奖*，团队发表国际顶尖会议或斩获国赛大奖最高可获 **30,000元** 的现金重奖。\n*详情参考以下链接：*\n👉 [研究生招生简章](/news/12) | 👉 [调剂工作办法](/news/14)";
-  } 
-  else if (text.includes('挑战杯') || text.includes('特等奖') || text.includes('科创') || text.includes('竞赛')) {
-    responseText = "**第十六届“挑战杯”全国特等奖项目及技术指标**：\n- **项目名称**：《基于自适应多模态大模型的智能金融实时风险控制系统》\n- **关键算法创新**：\n  - 独创性地提出了 **“轻量化低延迟混合注意力机制”**，成功将传统 Transformer 的二次方级空间开销降低至 **准线性 (O(N)) 复杂度**。\n  - 达成决策端响应延迟低于 **30毫秒**，欺诈特征提取成功率达 **99.8%**。\n- **辉煌荣誉**：最终以优异的技术沉淀，在数万个高校竞演项目中脱颖而出，荣获**全国特等奖**，创下我院历史最好成绩。\n*详情参考以下链接：*\n👉 [挑战杯获奖详情](/news/1) | 👉 [教师学术成果](/news/4)";
-  } 
-  else if (text.includes('风采') || text.includes('图片') || text.includes('画廊') || text.includes('机房') || text.includes('图书馆') || text.includes('展示') || text.includes('看图')) {
-    responseText = "**学院风采与学术场景朝圣**：\n您可以前往我们的专属图片展墙进行沉浸式放映：\n- **数智极客实验室**：配备高性能多卡液冷 GPU 计算集群，提供全天候算力。\n- **逸夫图书馆**：红墙绿树，馆藏数百万册数智学科前沿文献专著。\n- **佛山校区绿道**：书香桂花交融，为师生课余灵感探讨提供惬意空间。\n*详情参考以下链接：*\n👉 [前往学院风采图片展墙](/showcase)";
-  } 
-  else {
-    responseText = "您好！我是大数据与人工智能学院的数智助手。\n我能够为您解答以下事宜：\n- **学院基本概况** (输入：介绍学院)\n- **研究生报考与调剂指南** (输入：考研调剂)\n- **学生“挑战杯”国赛特等奖成果** (输入：挑战杯)\n- **校园风光与实验室实景风采** (输入：展示风采)\n\n请问您有什么需要具体了解的吗？您也可以点击上方的快捷按钮开始对话。";
+const titleFieldNames = [
+  'title',
+  'name',
+  'filename',
+  'file_name',
+  'document_name',
+  'source',
+  'path',
+  'id'
+];
+
+const isSafeSourceUrl = (value: string) => {
+  return /^https?:\/\//i.test(value) || value.startsWith('/');
+};
+
+const normalizeSourceLink = (url: string, title?: string): SourceLink | null => {
+  const trimmedUrl = url.trim();
+  if (!isSafeSourceUrl(trimmedUrl)) return null;
+
+  const trimmedTitle = title?.trim() || trimmedUrl;
+  return {
+    title: trimmedTitle,
+    url: trimmedUrl
+  };
+};
+
+const collectSourceLinks = (payload: any, links: SourceLink[] = [], depth = 0): SourceLink[] => {
+  if (!payload || depth > 5) return links;
+
+  if (typeof payload === 'string') {
+    const directLink = normalizeSourceLink(payload);
+    if (directLink) links.push(directLink);
+    return links;
   }
 
-  setTimeout(() => {
-    isThinking.value = false;
-    const newMsg: Message = { role: 'assistant', text: '' };
-    messages.value.push(newMsg);
+  if (Array.isArray(payload)) {
+    payload.forEach(item => collectSourceLinks(item, links, depth + 1));
+    return links;
+  }
 
-    let currentIdx = 0;
-    const textLength = responseText.length;
-    const charsPerTick = 3;
+  if (typeof payload !== 'object') return links;
 
-    const typingTimer = setInterval(() => {
-      if (currentIdx < textLength) {
-        newMsg.text += responseText.slice(currentIdx, currentIdx + charsPerTick);
-        currentIdx += charsPerTick;
-        scrollToBottom();
-      } else {
-        newMsg.text = responseText;
-        clearInterval(typingTimer);
-        scrollToBottom();
+  const getFirstString = (names: string[]) => {
+    for (const name of names) {
+      const value = payload[name];
+      if (typeof value === 'string' && value.trim()) return value;
+    }
+
+    return '';
+  };
+
+  const url = getFirstString(linkFieldNames);
+  if (url) {
+    const sourceLink = normalizeSourceLink(url, getFirstString(titleFieldNames));
+    if (sourceLink) {
+      links.push(sourceLink);
+    }
+  }
+
+  Object.entries(payload).forEach(([key, value]) => {
+    if (sourceFieldNames.has(key) || key === 'metadata' || key === 'meta') {
+      collectSourceLinks(value, links, depth + 1);
+    }
+  });
+
+  return links.filter(Boolean);
+};
+
+const addSourceLinks = (message: Message, payload: any) => {
+  const sourceLinks = collectSourceLinks(payload);
+  if (sourceLinks.length === 0) return;
+
+  if (!message.sourceLinks) {
+    message.sourceLinks = [];
+  }
+
+  const seen = new Set(message.sourceLinks.map(link => link.url));
+  sourceLinks.forEach(link => {
+    if (seen.has(link.url)) return;
+    seen.add(link.url);
+    message.sourceLinks!.push(link);
+  });
+};
+
+const appendSourceLinks = (message: Message) => {
+  const links = message.sourceLinks || [];
+  if (links.length === 0) return;
+
+  const sourceMarkdown = [
+    '',
+    '#### 原文件链接',
+    ...links.map((link, index) => {
+      const label = escapeMarkdownLinkLabel(link.title || `原文件 ${index + 1}`);
+      const url = escapeMarkdownLinkUrl(link.url);
+      return `- [${label}](${url})`;
+    })
+  ].join('\n');
+
+  enqueueAssistantText(message, sourceMarkdown);
+};
+
+const isReasoningStreamEvent = (payload: any, eventName = '') => {
+  const eventHint = [
+    eventName,
+    payload?.event,
+    payload?.type
+  ].filter(Boolean).join(' ');
+
+  return /reason|thought|think|agent_thought/i.test(eventHint);
+};
+
+const extractChunkParts = (payload: any, eventName = ''): ChunkParts => {
+  const delta = payload?.delta || payload?.choices?.[0]?.delta;
+  const message = payload?.message || payload?.choices?.[0]?.message;
+  const data = payload?.data;
+  const dataDelta = data?.delta || data?.choices?.[0]?.delta;
+  const dataMessage = data?.message || data?.choices?.[0]?.message;
+  const shouldTreatDeltaAsReasoning = isReasoningStreamEvent(payload, eventName);
+
+  if (typeof payload === 'string') {
+    return shouldTreatDeltaAsReasoning
+      ? { content: '', reasoning: payload }
+      : { content: payload, reasoning: '' };
+  }
+
+  if (typeof data === 'string') {
+    return shouldTreatDeltaAsReasoning
+      ? { content: '', reasoning: data }
+      : { content: data, reasoning: '' };
+  }
+
+  if (typeof delta === 'string') {
+    return shouldTreatDeltaAsReasoning
+      ? { content: '', reasoning: delta }
+      : { content: delta, reasoning: '' };
+  }
+
+  if (typeof dataDelta === 'string') {
+    return shouldTreatDeltaAsReasoning
+      ? { content: '', reasoning: dataDelta }
+      : { content: dataDelta, reasoning: '' };
+  }
+
+  return {
+    content: payload?.content
+      || payload?.answer
+      || payload?.response
+      || payload?.text
+      || payload?.output_text
+      || delta?.content
+      || message?.content
+      || data?.content
+      || data?.answer
+      || data?.response
+      || data?.text
+      || data?.output_text
+      || dataDelta?.content
+      || dataMessage?.content
+      || '',
+    reasoning: payload?.reasoning_content
+      || payload?.reasoning
+      || payload?.thought
+      || payload?.think
+      || delta?.reasoning_content
+      || delta?.reasoning
+      || delta?.thought
+      || message?.reasoning_content
+      || message?.reasoning
+      || data?.reasoning_content
+      || data?.reasoning
+      || data?.thought
+      || data?.think
+      || dataDelta?.reasoning_content
+      || dataDelta?.reasoning
+      || dataDelta?.thought
+      || dataDelta?.reasoning_text
+      || dataMessage?.reasoning_content
+      || dataMessage?.reasoning
+      || ''
+  };
+};
+
+const appendAssistantText = (message: Message, content: string) => {
+  if (!content) return;
+  message.text += content;
+  void scrollToBottom('auto');
+};
+
+const ensureThoughts = (message: Message) => {
+  if (!message.thoughts) {
+    message.thoughts = [];
+  }
+
+  return message.thoughts;
+};
+
+const createThoughtBlock = (message: Message) => {
+  const thought: ThoughtBlock = {
+    id: nextThoughtId++,
+    text: '',
+    isOpen: true,
+    state: 'thinking',
+    isTyping: false
+  };
+
+  ensureThoughts(message).push(thought);
+  return thought;
+};
+
+const appendThoughtText = (thought: ThoughtBlock, content: string) => {
+  if (!content) return;
+  thought.text += content;
+  void scrollToBottom('auto');
+};
+
+const finishThoughtBlock = (thought: ThoughtBlock | null) => {
+  if (!thought) return;
+  thought.state = 'finished';
+  if (!thought.isTyping) {
+    thought.isOpen = false;
+  }
+};
+
+const finishActiveThoughtTypewriter = () => {
+  if (!activeTypewriterThought) return;
+
+  activeTypewriterThought.isTyping = false;
+  if (activeTypewriterThought.state === 'finished') {
+    activeTypewriterThought.isOpen = false;
+  }
+  activeTypewriterThought = null;
+};
+
+const stepThoughtTypewriter = () => {
+  thoughtTypewriterTimer = null;
+
+  const segment = thoughtTypewriterQueue[0];
+  if (!segment) {
+    finishActiveThoughtTypewriter();
+    return;
+  }
+
+  if (activeTypewriterThought !== segment.thought) {
+    finishActiveThoughtTypewriter();
+    activeTypewriterThought = segment.thought;
+  }
+
+  activeTypewriterThought.isOpen = true;
+  activeTypewriterThought.isTyping = true;
+  const queueChars = Array.from(segment.text);
+  const nextChar = queueChars.shift() || '';
+  segment.text = queueChars.join('');
+  if (segment.text.length === 0) {
+    thoughtTypewriterQueue.shift();
+  }
+  appendThoughtText(activeTypewriterThought, nextChar);
+
+  thoughtTypewriterTimer = window.setTimeout(stepThoughtTypewriter, THOUGHT_TYPEWRITER_INTERVAL_MS);
+};
+
+const enqueueThoughtText = (thought: ThoughtBlock, content: string) => {
+  if (!content) return;
+
+  thought.isOpen = true;
+  thought.isTyping = true;
+  thoughtTypewriterQueue.push({ thought, text: content });
+
+  if (!thoughtTypewriterTimer) {
+    thoughtTypewriterTimer = window.setTimeout(stepThoughtTypewriter, THOUGHT_TYPEWRITER_INTERVAL_MS);
+  }
+};
+
+const resetThoughtTypewriter = () => {
+  if (thoughtTypewriterTimer) {
+    window.clearTimeout(thoughtTypewriterTimer);
+    thoughtTypewriterTimer = null;
+  }
+
+  thoughtTypewriterQueue = [];
+  finishActiveThoughtTypewriter();
+};
+
+const createThinkParseState = (): ThinkParseState => ({
+  buffer: '',
+  insideTaggedThought: false,
+  activeTaggedThought: null,
+  activeReasoningThought: null
+});
+
+const findThinkStartTag = (value: string) => {
+  return value.match(/<think\b[^>]*>/i);
+};
+
+const findThinkEndTag = (value: string) => {
+  return value.match(/<\/think\s*>/i);
+};
+
+const getPotentialLiteralTagTailLength = (value: string, tag: string) => {
+  const lowerValue = value.toLowerCase();
+  const lowerTag = tag.toLowerCase();
+  const maxLength = Math.min(lowerValue.length, lowerTag.length - 1);
+
+  for (let length = maxLength; length > 0; length -= 1) {
+    if (lowerTag.startsWith(lowerValue.slice(-length))) {
+      return length;
+    }
+  }
+
+  return 0;
+};
+
+const getPotentialThinkTagTailLength = (value: string) => {
+  const literalTailLength = Math.max(
+    getPotentialLiteralTagTailLength(value, '<think>'),
+    getPotentialLiteralTagTailLength(value, '</think>')
+  );
+
+  const lastOpenBracket = value.lastIndexOf('<');
+  if (lastOpenBracket < 0) return literalTailLength;
+
+  const tail = value.slice(lastOpenBracket).toLowerCase();
+  if (
+    '<think'.startsWith(tail)
+    || '</think'.startsWith(tail)
+    || /^<think\b[^>]*$/.test(tail)
+    || /^<\/think\s*$/.test(tail)
+  ) {
+    return Math.max(literalTailLength, value.length - lastOpenBracket);
+  }
+
+  return literalTailLength;
+};
+
+const appendReasoningText = (message: Message, state: ThinkParseState, content: string) => {
+  if (!content) return;
+
+  if (!state.activeReasoningThought || state.activeReasoningThought.state === 'finished') {
+    state.activeReasoningThought = createThoughtBlock(message);
+  }
+
+  enqueueThoughtText(state.activeReasoningThought, content);
+};
+
+const consumeTaggedThoughtMarkup = (message: Message, state: ThinkParseState, content: string) => {
+  if (!content) return;
+
+  state.buffer += content;
+
+  while (state.buffer.length > 0) {
+    if (state.insideTaggedThought) {
+      const endTag = findThinkEndTag(state.buffer);
+      const endIndex = endTag?.index ?? -1;
+
+      if (endIndex >= 0) {
+        enqueueThoughtText(state.activeTaggedThought!, state.buffer.slice(0, endIndex));
+        finishThoughtBlock(state.activeTaggedThought);
+        state.activeTaggedThought = null;
+        state.insideTaggedThought = false;
+        state.buffer = state.buffer.slice(endIndex + endTag![0].length);
+        continue;
       }
-    }, 15);
-  }, 800);
+
+      const tailLength = getPotentialThinkTagTailLength(state.buffer);
+      const consumable = tailLength > 0 ? state.buffer.slice(0, -tailLength) : state.buffer;
+      if (!consumable) break;
+
+      enqueueThoughtText(state.activeTaggedThought!, consumable);
+      state.buffer = tailLength > 0 ? state.buffer.slice(-tailLength) : '';
+      break;
+    }
+
+    const startTag = findThinkStartTag(state.buffer);
+    const startIndex = startTag?.index ?? -1;
+
+    if (startIndex >= 0) {
+      const answerText = state.buffer.slice(0, startIndex);
+      if (answerText) {
+        finishThoughtBlock(state.activeReasoningThought);
+        state.activeReasoningThought = null;
+        enqueueAssistantText(message, answerText);
+      }
+
+      state.activeTaggedThought = createThoughtBlock(message);
+      state.insideTaggedThought = true;
+      state.buffer = state.buffer.slice(startIndex + startTag![0].length);
+      continue;
+    }
+
+    const tailLength = getPotentialThinkTagTailLength(state.buffer);
+    const consumable = tailLength > 0 ? state.buffer.slice(0, -tailLength) : state.buffer;
+    if (!consumable) break;
+
+    finishThoughtBlock(state.activeReasoningThought);
+    state.activeReasoningThought = null;
+    enqueueAssistantText(message, consumable);
+    state.buffer = tailLength > 0 ? state.buffer.slice(-tailLength) : '';
+    break;
+  }
+};
+
+const flushThinkParseState = (message: Message, state: ThinkParseState) => {
+  if (state.buffer) {
+    if (state.insideTaggedThought && state.activeTaggedThought) {
+      enqueueThoughtText(state.activeTaggedThought, state.buffer);
+    } else {
+      enqueueAssistantText(message, state.buffer);
+    }
+  }
+
+  state.buffer = '';
+  finishThoughtBlock(state.activeTaggedThought);
+  finishThoughtBlock(state.activeReasoningThought);
+  state.activeTaggedThought = null;
+  state.activeReasoningThought = null;
+  state.insideTaggedThought = false;
+};
+
+const resolveTypewriterIdle = () => {
+  if (!typewriterIdleResolver) return;
+  typewriterIdleResolver();
+  typewriterIdleResolver = null;
+};
+
+const stepTypewriter = () => {
+  typewriterTimer = null;
+
+  if (!activeTypewriterMessage || typewriterQueue.length === 0) {
+    if (activeTypewriterMessage) {
+      activeTypewriterMessage.isTyping = false;
+    }
+    resolveTypewriterIdle();
+    return;
+  }
+
+  activeTypewriterMessage.isTyping = true;
+  const queueChars = Array.from(typewriterQueue);
+  const nextChar = queueChars.shift() || '';
+  typewriterQueue = queueChars.join('');
+  appendAssistantText(activeTypewriterMessage, nextChar);
+
+  typewriterTimer = window.setTimeout(stepTypewriter, TYPEWRITER_INTERVAL_MS);
+};
+
+const enqueueAssistantText = (message: Message, content: string) => {
+  if (!content) return;
+
+  if (activeTypewriterMessage !== message) {
+    if (activeTypewriterMessage) {
+      activeTypewriterMessage.isTyping = false;
+    }
+    typewriterQueue = '';
+    activeTypewriterMessage = message;
+    resolveTypewriterIdle();
+  }
+
+  message.isTyping = true;
+  typewriterQueue += content;
+
+  if (!typewriterTimer) {
+    typewriterTimer = window.setTimeout(stepTypewriter, TYPEWRITER_INTERVAL_MS);
+  }
+};
+
+const waitForTypewriterIdle = () => {
+  if (!typewriterTimer && typewriterQueue.length === 0) {
+    return Promise.resolve();
+  }
+
+  return new Promise<void>(resolve => {
+    typewriterIdleResolver = resolve;
+  });
+};
+
+const resetTypewriter = () => {
+  if (typewriterTimer) {
+    window.clearTimeout(typewriterTimer);
+    typewriterTimer = null;
+  }
+
+  typewriterQueue = '';
+  if (activeTypewriterMessage) {
+    activeTypewriterMessage.isTyping = false;
+  }
+  activeTypewriterMessage = null;
+  resolveTypewriterIdle();
+};
+
+const parseStreamEvent = (eventBlock: string): StreamEvent | null => {
+  let eventName = '';
+  const dataLines: string[] = [];
+
+  eventBlock.split(/\r?\n/).forEach(line => {
+    if (!line.trim() || line.startsWith(':')) return;
+
+    if (line.startsWith('event:')) {
+      eventName = line.slice(6).trim();
+      return;
+    }
+
+    if (line.startsWith('data:')) {
+      dataLines.push(line.slice(5).replace(/^ /, ''));
+      return;
+    }
+
+    dataLines.push(line);
+  });
+
+  if (dataLines.length === 0) return null;
+
+  return {
+    eventName,
+    data: dataLines.join('\n')
+  };
+};
+
+const processStreamEvent = (eventBlock: string, assistantMessage: Message, thinkState: ThinkParseState) => {
+  const streamEvent = parseStreamEvent(eventBlock);
+  if (!streamEvent) return false;
+
+  const data = streamEvent.data.trim();
+  if (!data) return false;
+  if (data === '[DONE]') return true;
+
+  try {
+    const payload = JSON.parse(data);
+    addSourceLinks(assistantMessage, payload);
+    const chunk = extractChunkParts(payload, streamEvent.eventName);
+    if (chunk.reasoning || chunk.content) {
+      isThinking.value = false;
+      appendReasoningText(assistantMessage, thinkState, chunk.reasoning);
+      consumeTaggedThoughtMarkup(assistantMessage, thinkState, chunk.content);
+    }
+  } catch {
+    isThinking.value = false;
+    if (isReasoningStreamEvent({ event: streamEvent.eventName })) {
+      appendReasoningText(assistantMessage, thinkState, streamEvent.data);
+    } else {
+      consumeTaggedThoughtMarkup(assistantMessage, thinkState, streamEvent.data);
+    }
+  }
+
+  return false;
+};
+
+const requestStreamingAnswer = async (query: string) => {
+  const controller = new AbortController();
+  activeController = controller;
+  resetTypewriter();
+  resetThoughtTypewriter();
+  isThinking.value = true;
+
+  try {
+    const response = await fetch(CHAT_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        message: query,
+        stream: true,
+        retrieve_only: false
+      }),
+      signal: controller.signal
+    });
+
+    if (!response.ok) {
+      let errorDetail = '';
+      try {
+        errorDetail = await response.text();
+      } catch {
+        errorDetail = '';
+      }
+      throw new Error(errorDetail || `知识库服务返回 ${response.status}`);
+    }
+
+    const assistantMessage = reactive<Message>({ role: 'assistant', text: '', thoughts: [], sourceLinks: [] });
+    messages.value.push(assistantMessage);
+    const thinkState = createThinkParseState();
+
+    const contentType = response.headers.get('content-type') || '';
+    if (contentType.includes('application/json')) {
+      const payload = await response.json();
+      isThinking.value = false;
+      addSourceLinks(assistantMessage, payload);
+      const chunk = extractChunkParts(payload);
+      appendReasoningText(assistantMessage, thinkState, chunk.reasoning);
+      consumeTaggedThoughtMarkup(assistantMessage, thinkState, chunk.content);
+      flushThinkParseState(assistantMessage, thinkState);
+      appendSourceLinks(assistantMessage);
+      if (!assistantMessage.text.trim() && typewriterQueue.length === 0 && (assistantMessage.thoughts?.length || 0) === 0) {
+        enqueueAssistantText(assistantMessage, '知识库服务暂未返回可展示的回答。');
+      }
+      await scrollToBottom();
+      return;
+    }
+
+    if (!response.body) {
+      throw new Error('当前浏览器不支持流式响应读取。');
+    }
+
+    isStreaming.value = true;
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder('utf-8');
+    let buffer = '';
+    let doneSignalReceived = false;
+    let pendingEventName = '';
+    let isRawTextStream = false;
+
+    while (!doneSignalReceived) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      const decodedChunk = decoder.decode(value, { stream: true });
+
+      if (isRawTextStream || (!buffer && !/^(\s*:|\s*event:|\s*data:)/m.test(decodedChunk))) {
+        isRawTextStream = true;
+        isThinking.value = false;
+        consumeTaggedThoughtMarkup(assistantMessage, thinkState, decodedChunk);
+      } else {
+        buffer += decodedChunk;
+        const events = buffer.split(/\r?\n\r?\n/);
+        buffer = events.pop() || '';
+
+        for (const eventBlock of events) {
+          pendingEventName = '';
+          if (processStreamEvent(eventBlock, assistantMessage, thinkState)) {
+            doneSignalReceived = true;
+            break;
+          }
+        }
+
+        if (!doneSignalReceived && buffer.includes('\n')) {
+          const lines = buffer.split(/\r?\n/);
+          buffer = lines.pop() || '';
+
+          for (const line of lines) {
+            if (!line.trim() || line.startsWith(':')) continue;
+
+            if (line.startsWith('event:')) {
+              pendingEventName = line.slice(6).trim();
+              continue;
+            }
+
+            const eventBlock = line.startsWith('data:') && pendingEventName
+              ? `event: ${pendingEventName}\n${line}`
+              : line;
+
+            if (processStreamEvent(eventBlock, assistantMessage, thinkState)) {
+              doneSignalReceived = true;
+              break;
+            }
+
+            if (line.startsWith('data:')) {
+              pendingEventName = '';
+            }
+          }
+        }
+      }
+    }
+
+    buffer += decoder.decode();
+    if (buffer.trim()) {
+      const finalEventBlock = pendingEventName && buffer.startsWith('data:')
+        ? `event: ${pendingEventName}\n${buffer}`
+        : buffer;
+      processStreamEvent(finalEventBlock, assistantMessage, thinkState);
+    }
+
+    flushThinkParseState(assistantMessage, thinkState);
+    appendSourceLinks(assistantMessage);
+
+    if (!assistantMessage.text.trim() && typewriterQueue.length === 0 && (assistantMessage.thoughts?.length || 0) === 0) {
+      assistantMessage.text = '知识库服务暂未返回可展示的回答。';
+    }
+
+    await scrollToBottom();
+  } catch (error) {
+    if (controller.signal.aborted) return;
+
+    console.error('AI chat request failed:', error);
+    messages.value.push({
+      role: 'assistant',
+      text: error instanceof Error && error.message
+        ? `抱歉，知识库问答服务暂时无法响应：${error.message}`
+        : '抱歉，知识库问答服务暂时无法响应。请稍后再试，或联系网站管理员检查接口配置。'
+    });
+    await scrollToBottom();
+  } finally {
+    if (activeController === controller) {
+      activeController = null;
+    }
+    isThinking.value = false;
+    isStreaming.value = false;
+  }
+};
+
+const abortActiveRequest = () => {
+  if (activeController) {
+    activeController.abort();
+    activeController = null;
+  }
+  resetTypewriter();
+  resetThoughtTypewriter();
+  isThinking.value = false;
+  isStreaming.value = false;
+};
+
+const handleInputKeydown = (event: KeyboardEvent) => {
+  if (event.key === 'Enter' && !event.shiftKey) {
+    event.preventDefault();
+    void submitMessage();
+  }
 };
 
 // Send user message
-const submitMessage = () => {
+const submitMessage = async () => {
   const query = inputQuery.value.trim();
-  if (query.length === 0 || isThinking.value) return;
+  if (query.length === 0 || isBusy.value) return;
 
   messages.value.push({
     role: 'user',
@@ -269,23 +1214,21 @@ const submitMessage = () => {
 
   inputQuery.value = '';
   scrollToBottom();
-  simulateAiResponse(query);
+  await requestStreamingAnswer(query);
 };
 </script>
 
 <style scoped>
-/* Backdrop overlay layer with dark glass background */
+/* Non-blocking floating chat shell */
 .gemini-chat-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background-color: rgba(13, 27, 42, 0.15); /* Very light grey-blue glass */
-  backdrop-filter: blur(5px);
+  right: 28px;
+  bottom: calc(28px + env(safe-area-inset-bottom));
   z-index: 99999;
   display: flex;
-  justify-content: flex-end; /* Align slide panel to the right */
+  align-items: flex-end;
+  justify-content: flex-end;
+  pointer-events: none;
   opacity: 0;
   transition: opacity 0.35s ease;
   animation: fade-in-keyframes 0.35s forwards;
@@ -304,34 +1247,50 @@ const submitMessage = () => {
   to { opacity: 0; }
 }
 
-/* Minimalist Right Sidebar Panel Container (Light Academic Theme) */
 .gemini-sidebar-panel {
-  width: 440px;
-  max-width: 100%;
-  height: 100%;
+  width: min(420px, calc(100vw - 32px));
+  height: min(620px, calc(100vh - 96px));
+  max-height: calc(100vh - 96px);
   background-color: #ffffff; /* Clean light background */
-  border-left: 1px solid rgba(13, 27, 42, 0.08);
+  border: 1px solid rgba(13, 27, 42, 0.08);
+  border-radius: 8px;
   display: flex;
   flex-direction: column;
-  box-shadow: -6px 0 30px rgba(13, 27, 42, 0.08);
+  box-shadow: 0 22px 50px rgba(45, 8, 59, 0.18);
   box-sizing: border-box;
-  transform: translateX(100%);
-  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+  pointer-events: auto;
+  transform: translateY(18px) scale(0.96);
+  transform-origin: right bottom;
+  transition:
+    width 0.28s ease,
+    height 0.28s ease,
+    max-height 0.28s ease,
+    transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
   will-change: transform; /* Hardware acceleration for 60fps performance */
   animation: slide-in-keyframes 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+.gemini-sidebar-panel.expanded {
+  width: min(720px, calc(100vw - 56px));
+  height: min(780px, calc(100vh - 56px));
+  max-height: calc(100vh - 56px);
+}
+
 @keyframes slide-in-keyframes {
-  to { transform: translateX(0); }
+  to { transform: translateY(0) scale(1); }
 }
 
 /* Exit slide-out transition */
 .gemini-sidebar-panel.slide-out-active {
-  animation: slide-out-keyframes 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: slide-out-keyframes 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 @keyframes slide-out-keyframes {
-  to { transform: translateX(100%); }
+  to {
+    opacity: 0;
+    transform: translateY(18px) scale(0.96);
+  }
 }
 
 /* Header style - clean white academic look */
@@ -354,14 +1313,20 @@ const submitMessage = () => {
 }
 
 .spark-logo-animate {
-  color: var(--primary-color);
+  width: 38px;
+  height: 38px;
+  border-radius: 9px;
+  background: transparent;
   display: flex;
   align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
 .gemini-sparkle {
-  width: 20px;
-  height: 20px;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .brand-text {
@@ -377,7 +1342,13 @@ const submitMessage = () => {
   font-family: var(--font-heading);
 }
 
-.close-panel-btn {
+.window-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.panel-action-btn {
   background: none;
   border: none;
   color: #334155; /* Force rich slate-grey to avoid white close icon inheritance */
@@ -392,14 +1363,14 @@ const submitMessage = () => {
   transition: all 0.3s;
 }
 
-.close-panel-btn:hover {
+.panel-action-btn:hover {
   background-color: rgba(123, 44, 191, 0.05);
   color: var(--primary-color);
   opacity: 1;
   transform: scale(1.05);
 }
 
-.close-panel-btn svg {
+.panel-action-btn svg {
   width: 18px;
   height: 18px;
 }
@@ -533,11 +1504,11 @@ const submitMessage = () => {
 }
 
 .message-avatar {
-  width: 30px;
-  height: 30px;
+  width: 34px;
+  height: 34px;
   background-color: #ffffff;
   border: 1px solid rgba(123, 44, 191, 0.12);
-  border-radius: 50%;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -547,9 +1518,9 @@ const submitMessage = () => {
 }
 
 .avatar-spark {
-  width: 14px;
-  height: 14px;
-  color: var(--primary-color);
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .spin-spark {
@@ -557,8 +1528,8 @@ const submitMessage = () => {
 }
 
 @keyframes avatar-pulsate-keyframes {
-  0%, 100% { transform: scale(1) rotate(0deg); opacity: 0.8; }
-  50% { transform: scale(1.1) rotate(180deg); opacity: 1; }
+  0%, 100% { transform: scale(0.96); opacity: 0.85; }
+  50% { transform: scale(1.04); opacity: 1; }
 }
 
 .message-wrapper.assistant .message-bubble {
@@ -571,15 +1542,156 @@ const submitMessage = () => {
   border: 1px solid rgba(13, 27, 42, 0.05);
 }
 
+.reasoning-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.reasoning-block {
+  overflow: hidden;
+  border: 1px solid rgba(100, 116, 139, 0.16);
+  border-radius: 8px;
+  background-color: #f8fafc;
+  transition:
+    border-color 0.25s ease,
+    background-color 0.25s ease;
+}
+
+.reasoning-block.active {
+  border-color: rgba(123, 44, 191, 0.24);
+  background-color: #fbf8ff;
+}
+
+.reasoning-toggle {
+  width: 100%;
+  min-height: 36px;
+  padding: 8px 10px;
+  border: 0;
+  background: transparent;
+  color: #475569;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-align: left;
+}
+
+.reasoning-toggle:hover {
+  color: var(--primary-color);
+  background-color: rgba(123, 44, 191, 0.04);
+}
+
+.reasoning-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: #94a3b8;
+  flex-shrink: 0;
+}
+
+.reasoning-block.active .reasoning-status-dot {
+  background-color: var(--primary-color);
+  box-shadow: 0 0 0 4px rgba(123, 44, 191, 0.1);
+  animation: reasoning-dot-pulse 1.25s ease-in-out infinite;
+}
+
+@keyframes reasoning-dot-pulse {
+  0%, 100% { transform: scale(0.9); opacity: 0.65; }
+  50% { transform: scale(1.18); opacity: 1; }
+}
+
+.reasoning-title {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.reasoning-index {
+  color: #94a3b8;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.reasoning-chevron {
+  width: 14px;
+  height: 14px;
+  color: currentColor;
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.reasoning-block.open .reasoning-chevron {
+  transform: rotate(180deg);
+}
+
+.reasoning-content {
+  border-top: 1px solid rgba(100, 116, 139, 0.12);
+  padding: 9px 10px 11px;
+  color: #64748b;
+  font-size: 0.8rem;
+  line-height: 1.58;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
 /* bubble texts formatting */
 .bubble-content {
   font-size: 0.88rem;
   line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.bubble-content.typing::after,
+.reasoning-content.typing::after {
+  content: '';
+  display: inline-block;
+  width: 1.5px;
+  height: 1em;
+  margin-left: 2px;
+  background-color: currentColor;
+  vertical-align: -0.15em;
+  animation: typing-cursor-blink 0.9s steps(2, start) infinite;
+}
+
+@keyframes typing-cursor-blink {
+  50% { opacity: 0; }
 }
 
 :deep(.bubble-content strong) {
   color: var(--secondary-color);
   font-weight: 700;
+}
+
+:deep(.chat-heading) {
+  margin: 10px 0 6px;
+  color: var(--secondary-color);
+  font-family: var(--font-heading);
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+:deep(.chat-heading:first-child) {
+  margin-top: 0;
+}
+
+:deep(.chat-heading-1) {
+  font-size: 1.05rem;
+}
+
+:deep(.chat-heading-2) {
+  font-size: 0.98rem;
+}
+
+:deep(.chat-heading-3),
+:deep(.chat-heading-4) {
+  font-size: 0.9rem;
 }
 
 :deep(.chat-list) {
@@ -588,11 +1700,60 @@ const submitMessage = () => {
   list-style-type: disc;
 }
 
+:deep(.chat-break) {
+  display: block;
+  height: 4px;
+}
+
 :deep(.chat-list-item) {
   margin-bottom: 6px;
   font-size: 0.85rem;
   line-height: 1.5;
   color: #1e293b; /* Explicit slate list item */
+}
+
+:deep(.chat-table-scroll) {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  margin: 10px 0;
+  border: 1px solid rgba(13, 27, 42, 0.08);
+  border-radius: 8px;
+  background-color: #ffffff;
+}
+
+:deep(.chat-table) {
+  width: 100%;
+  min-width: 320px;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+:deep(.chat-table th) {
+  background-color: #f8fafc;
+  color: var(--secondary-color);
+  font-weight: 800;
+}
+
+:deep(.chat-table-cell) {
+  padding: 8px 10px;
+  border-bottom: 1px solid rgba(13, 27, 42, 0.07);
+  color: #1e293b;
+  vertical-align: top;
+  white-space: nowrap;
+}
+
+:deep(.chat-table tbody tr:last-child .chat-table-cell) {
+  border-bottom: 0;
+}
+
+:deep(.chat-table-cell.align-center) {
+  text-align: center;
+}
+
+:deep(.chat-table-cell.align-right) {
+  text-align: right;
 }
 
 :deep(.chat-embedded-link) {
@@ -706,6 +1867,18 @@ const submitMessage = () => {
   opacity: 1;
 }
 
+.input-area-box textarea:disabled {
+  cursor: progress;
+}
+
+.assistant-provider {
+  margin: 10px 0 0;
+  text-align: center;
+  font-size: 0.72rem;
+  line-height: 1.2;
+  color: #94a3b8;
+}
+
 /* Advanced integrated actions bar under textarea */
 .input-actions-bar {
   display: flex;
@@ -749,6 +1922,11 @@ const submitMessage = () => {
   transform: scale(1.05);
 }
 
+.send-message-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
 .send-message-btn svg {
   width: 13px;
   height: 13px;
@@ -756,8 +1934,33 @@ const submitMessage = () => {
 
 /* Mobile responsive drawer overlay */
 @media (max-width: 480px) {
+  .gemini-chat-overlay {
+    right: 12px;
+    bottom: calc(12px + env(safe-area-inset-bottom));
+  }
+
   .gemini-sidebar-panel {
-    width: 100vw;
+    width: calc(100vw - 24px);
+    height: min(560px, calc(100vh - 80px));
+    max-height: calc(100vh - 80px);
+  }
+
+  .gemini-sidebar-panel.expanded {
+    width: calc(100vw - 24px);
+    height: calc(100vh - 80px);
+    max-height: calc(100vh - 80px);
+  }
+
+  .sidebar-header {
+    padding: 0 16px;
+  }
+
+  .chat-viewport {
+    padding: 18px;
+  }
+
+  .sidebar-footer {
+    padding: 14px 16px 16px;
   }
 }
 </style>
