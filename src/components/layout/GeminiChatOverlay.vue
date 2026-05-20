@@ -250,6 +250,11 @@ interface ThinkParseState {
   activeReasoningThought: ThoughtBlock | null;
 }
 
+interface StreamEvent {
+  eventName: string;
+  data: string;
+}
+
 const messages = ref<Message[]>([]);
 let nextThoughtId = 1;
 
@@ -358,22 +363,61 @@ const scrollToBottom = async (behavior: ScrollBehavior = 'smooth') => {
   }
 };
 
-const extractChunkParts = (payload: any): ChunkParts => {
+const isReasoningStreamEvent = (payload: any, eventName = '') => {
+  const eventHint = [
+    eventName,
+    payload?.event,
+    payload?.type
+  ].filter(Boolean).join(' ');
+
+  return /reason|thought|think|agent_thought/i.test(eventHint);
+};
+
+const extractChunkParts = (payload: any, eventName = ''): ChunkParts => {
   const delta = payload?.delta || payload?.choices?.[0]?.delta;
   const message = payload?.message || payload?.choices?.[0]?.message;
   const data = payload?.data;
   const dataDelta = data?.delta || data?.choices?.[0]?.delta;
   const dataMessage = data?.message || data?.choices?.[0]?.message;
+  const shouldTreatDeltaAsReasoning = isReasoningStreamEvent(payload, eventName);
+
+  if (typeof payload === 'string') {
+    return shouldTreatDeltaAsReasoning
+      ? { content: '', reasoning: payload }
+      : { content: payload, reasoning: '' };
+  }
+
+  if (typeof data === 'string') {
+    return shouldTreatDeltaAsReasoning
+      ? { content: '', reasoning: data }
+      : { content: data, reasoning: '' };
+  }
+
+  if (typeof delta === 'string') {
+    return shouldTreatDeltaAsReasoning
+      ? { content: '', reasoning: delta }
+      : { content: delta, reasoning: '' };
+  }
+
+  if (typeof dataDelta === 'string') {
+    return shouldTreatDeltaAsReasoning
+      ? { content: '', reasoning: dataDelta }
+      : { content: dataDelta, reasoning: '' };
+  }
 
   return {
     content: payload?.content
       || payload?.answer
       || payload?.response
+      || payload?.text
+      || payload?.output_text
       || delta?.content
       || message?.content
       || data?.content
       || data?.answer
       || data?.response
+      || data?.text
+      || data?.output_text
       || dataDelta?.content
       || dataMessage?.content
       || '',
@@ -393,6 +437,7 @@ const extractChunkParts = (payload: any): ChunkParts => {
       || dataDelta?.reasoning_content
       || dataDelta?.reasoning
       || dataDelta?.thought
+      || dataDelta?.reasoning_text
       || dataMessage?.reasoning_content
       || dataMessage?.reasoning
       || ''
@@ -642,22 +687,45 @@ const resetTypewriter = () => {
   resolveTypewriterIdle();
 };
 
-const processSseLine = (line: string, assistantMessage: Message, thinkState: ThinkParseState) => {
-  const trimmed = line.trim();
-  if (!trimmed || trimmed.startsWith(':')) return false;
+const parseStreamEvent = (eventBlock: string): StreamEvent | null => {
+  let eventName = '';
+  const dataLines: string[] = [];
 
-  if (!trimmed.startsWith('data:')) {
-    isThinking.value = false;
-    consumeTaggedThoughtMarkup(assistantMessage, thinkState, `${line}\n`);
-    return false;
-  }
+  eventBlock.split(/\r?\n/).forEach(line => {
+    if (!line.trim() || line.startsWith(':')) return;
 
-  const data = trimmed.slice(5).trim();
+    if (line.startsWith('event:')) {
+      eventName = line.slice(6).trim();
+      return;
+    }
+
+    if (line.startsWith('data:')) {
+      dataLines.push(line.slice(5).replace(/^ /, ''));
+      return;
+    }
+
+    dataLines.push(line);
+  });
+
+  if (dataLines.length === 0) return null;
+
+  return {
+    eventName,
+    data: dataLines.join('\n')
+  };
+};
+
+const processStreamEvent = (eventBlock: string, assistantMessage: Message, thinkState: ThinkParseState) => {
+  const streamEvent = parseStreamEvent(eventBlock);
+  if (!streamEvent) return false;
+
+  const data = streamEvent.data.trim();
   if (!data) return false;
   if (data === '[DONE]') return true;
 
   try {
-    const chunk = extractChunkParts(JSON.parse(data));
+    const payload = JSON.parse(data);
+    const chunk = extractChunkParts(payload, streamEvent.eventName);
     if (chunk.reasoning || chunk.content) {
       isThinking.value = false;
       appendReasoningText(assistantMessage, thinkState, chunk.reasoning);
@@ -665,7 +733,11 @@ const processSseLine = (line: string, assistantMessage: Message, thinkState: Thi
     }
   } catch {
     isThinking.value = false;
-    consumeTaggedThoughtMarkup(assistantMessage, thinkState, data);
+    if (isReasoningStreamEvent({ event: streamEvent.eventName })) {
+      appendReasoningText(assistantMessage, thinkState, streamEvent.data);
+    } else {
+      consumeTaggedThoughtMarkup(assistantMessage, thinkState, streamEvent.data);
+    }
   }
 
   return false;
@@ -734,21 +806,28 @@ const requestStreamingAnswer = async (query: string) => {
       const { done, value } = await reader.read();
       if (done) break;
 
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split(/\r?\n/);
-      buffer = lines.pop() || '';
+      const decodedChunk = decoder.decode(value, { stream: true });
 
-      for (const line of lines) {
-        if (processSseLine(line, assistantMessage, thinkState)) {
-          doneSignalReceived = true;
-          break;
+      if (!buffer && !/^(\s*:|\s*event:|\s*data:)/m.test(decodedChunk)) {
+        isThinking.value = false;
+        consumeTaggedThoughtMarkup(assistantMessage, thinkState, decodedChunk);
+      } else {
+        buffer += decodedChunk;
+        const events = buffer.split(/\r?\n\r?\n/);
+        buffer = events.pop() || '';
+
+        for (const eventBlock of events) {
+          if (processStreamEvent(eventBlock, assistantMessage, thinkState)) {
+            doneSignalReceived = true;
+            break;
+          }
         }
       }
     }
 
     buffer += decoder.decode();
     if (buffer.trim()) {
-      processSseLine(buffer, assistantMessage, thinkState);
+      processStreamEvent(buffer, assistantMessage, thinkState);
     }
 
     flushThinkParseState(assistantMessage, thinkState);
