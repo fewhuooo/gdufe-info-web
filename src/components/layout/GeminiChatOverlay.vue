@@ -77,7 +77,7 @@
           <div 
             v-for="(msg, index) in messages" 
             :key="index"
-            v-show="msg.role === 'user' || msg.text || msg.isTyping"
+            v-show="msg.role === 'user' || msg.text || msg.isTyping || msg.thoughts?.length"
             class="message-wrapper"
             :class="msg.role"
           >
@@ -88,7 +88,39 @@
 
             <!-- 消息文本 -->
             <div class="message-bubble">
+              <div v-if="msg.role === 'assistant' && msg.thoughts?.length" class="reasoning-stack">
+                <section
+                  v-for="(thought, thoughtIndex) in msg.thoughts"
+                  :key="thought.id"
+                  class="reasoning-block"
+                  :class="{ open: thought.isOpen, active: thought.state === 'thinking' }"
+                >
+                  <button
+                    type="button"
+                    class="reasoning-toggle"
+                    :aria-expanded="thought.isOpen"
+                    @click="toggleThoughtBlock(thought)"
+                  >
+                    <span class="reasoning-status-dot"></span>
+                    <span class="reasoning-title">
+                      {{ thought.state === 'thinking' ? '正在思考' : '已深度思考' }}
+                    </span>
+                    <span v-if="(msg.thoughts?.length || 0) > 1" class="reasoning-index">
+                      {{ thoughtIndex + 1 }}/{{ msg.thoughts?.length }}
+                    </span>
+                    <ChevronDown class="reasoning-chevron" aria-hidden="true" />
+                  </button>
+
+                  <div
+                    v-show="thought.isOpen"
+                    class="reasoning-content"
+                    v-html="formatMessageText(thought.text || '正在整理思路...')"
+                  ></div>
+                </section>
+              </div>
+
               <div
+                v-if="msg.text || msg.isTyping"
                 class="bubble-content"
                 :class="{ typing: msg.role === 'assistant' && msg.isTyping }"
                 v-html="formatMessageText(msg.text)"
@@ -152,6 +184,7 @@
 <script setup lang="ts">
 import { computed, ref, reactive, nextTick, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
+import { ChevronDown } from 'lucide-vue-next';
 
 const emit = defineEmits(['close']);
 const router = useRouter();
@@ -195,9 +228,30 @@ interface Message {
   role: 'user' | 'assistant';
   text: string;
   isTyping?: boolean;
+  thoughts?: ThoughtBlock[];
+}
+
+interface ThoughtBlock {
+  id: number;
+  text: string;
+  isOpen: boolean;
+  state: 'thinking' | 'finished';
+}
+
+interface ChunkParts {
+  content: string;
+  reasoning: string;
+}
+
+interface ThinkParseState {
+  buffer: string;
+  insideTaggedThought: boolean;
+  activeTaggedThought: ThoughtBlock | null;
+  activeReasoningThought: ThoughtBlock | null;
 }
 
 const messages = ref<Message[]>([]);
+let nextThoughtId = 1;
 
 // Focus input on mount
 onMounted(() => {
@@ -289,6 +343,10 @@ const formatMessageText = (text: string) => {
   return blocks.join('<br>');
 };
 
+const toggleThoughtBlock = (thought: ThoughtBlock) => {
+  thought.isOpen = !thought.isOpen;
+};
+
 // Scroll to viewport bottom
 const scrollToBottom = async (behavior: ScrollBehavior = 'smooth') => {
   await nextTick();
@@ -300,14 +358,172 @@ const scrollToBottom = async (behavior: ScrollBehavior = 'smooth') => {
   }
 };
 
-const extractChunkText = (payload: any): string => {
-  return payload?.content || payload?.answer || payload?.delta?.content || payload?.choices?.[0]?.delta?.content || '';
+const extractChunkParts = (payload: any): ChunkParts => {
+  const delta = payload?.delta || payload?.choices?.[0]?.delta;
+  const message = payload?.message || payload?.choices?.[0]?.message;
+
+  return {
+    content: payload?.content
+      || payload?.answer
+      || delta?.content
+      || message?.content
+      || '',
+    reasoning: payload?.reasoning_content
+      || payload?.reasoning
+      || payload?.thought
+      || payload?.think
+      || delta?.reasoning_content
+      || delta?.reasoning
+      || delta?.thought
+      || message?.reasoning_content
+      || message?.reasoning
+      || ''
+  };
 };
 
 const appendAssistantText = (message: Message, content: string) => {
   if (!content) return;
   message.text += content;
   void scrollToBottom('auto');
+};
+
+const ensureThoughts = (message: Message) => {
+  if (!message.thoughts) {
+    message.thoughts = [];
+  }
+
+  return message.thoughts;
+};
+
+const createThoughtBlock = (message: Message) => {
+  const thought: ThoughtBlock = {
+    id: nextThoughtId++,
+    text: '',
+    isOpen: true,
+    state: 'thinking'
+  };
+
+  ensureThoughts(message).push(thought);
+  return thought;
+};
+
+const appendThoughtText = (thought: ThoughtBlock, content: string) => {
+  if (!content) return;
+  thought.text += content;
+  void scrollToBottom('auto');
+};
+
+const finishThoughtBlock = (thought: ThoughtBlock | null) => {
+  if (!thought) return;
+  thought.state = 'finished';
+  thought.isOpen = false;
+};
+
+const createThinkParseState = (): ThinkParseState => ({
+  buffer: '',
+  insideTaggedThought: false,
+  activeTaggedThought: null,
+  activeReasoningThought: null
+});
+
+const indexOfIgnoreCase = (source: string, search: string) => {
+  return source.toLowerCase().indexOf(search.toLowerCase());
+};
+
+const getPotentialTagTailLength = (value: string, tag: string) => {
+  const lowerValue = value.toLowerCase();
+  const lowerTag = tag.toLowerCase();
+  const maxLength = Math.min(lowerValue.length, lowerTag.length - 1);
+
+  for (let length = maxLength; length > 0; length -= 1) {
+    if (lowerTag.startsWith(lowerValue.slice(-length))) {
+      return length;
+    }
+  }
+
+  return 0;
+};
+
+const appendReasoningText = (message: Message, state: ThinkParseState, content: string) => {
+  if (!content) return;
+
+  if (!state.activeReasoningThought || state.activeReasoningThought.state === 'finished') {
+    state.activeReasoningThought = createThoughtBlock(message);
+  }
+
+  appendThoughtText(state.activeReasoningThought, content);
+};
+
+const consumeTaggedThoughtMarkup = (message: Message, state: ThinkParseState, content: string) => {
+  if (!content) return;
+
+  state.buffer += content;
+
+  while (state.buffer.length > 0) {
+    if (state.insideTaggedThought) {
+      const endIndex = indexOfIgnoreCase(state.buffer, '</think>');
+
+      if (endIndex >= 0) {
+        appendThoughtText(state.activeTaggedThought!, state.buffer.slice(0, endIndex));
+        finishThoughtBlock(state.activeTaggedThought);
+        state.activeTaggedThought = null;
+        state.insideTaggedThought = false;
+        state.buffer = state.buffer.slice(endIndex + '</think>'.length);
+        continue;
+      }
+
+      const tailLength = getPotentialTagTailLength(state.buffer, '</think>');
+      const consumable = tailLength > 0 ? state.buffer.slice(0, -tailLength) : state.buffer;
+      if (!consumable) break;
+
+      appendThoughtText(state.activeTaggedThought!, consumable);
+      state.buffer = tailLength > 0 ? state.buffer.slice(-tailLength) : '';
+      break;
+    }
+
+    const startIndex = indexOfIgnoreCase(state.buffer, '<think>');
+
+    if (startIndex >= 0) {
+      const answerText = state.buffer.slice(0, startIndex);
+      if (answerText) {
+        finishThoughtBlock(state.activeReasoningThought);
+        state.activeReasoningThought = null;
+        enqueueAssistantText(message, answerText);
+      }
+
+      state.activeTaggedThought = createThoughtBlock(message);
+      state.insideTaggedThought = true;
+      state.buffer = state.buffer.slice(startIndex + '<think>'.length);
+      continue;
+    }
+
+    const tailLength = getPotentialTagTailLength(state.buffer, '<think>');
+    const consumable = tailLength > 0 ? state.buffer.slice(0, -tailLength) : state.buffer;
+    if (!consumable) break;
+
+    finishThoughtBlock(state.activeReasoningThought);
+    state.activeReasoningThought = null;
+    enqueueAssistantText(message, consumable);
+    state.buffer = tailLength > 0 ? state.buffer.slice(-tailLength) : '';
+    break;
+  }
+};
+
+const flushThinkParseState = (message: Message, state: ThinkParseState) => {
+  if (state.buffer) {
+    if (state.insideTaggedThought && state.activeTaggedThought) {
+      appendThoughtText(state.activeTaggedThought, state.buffer);
+    } else {
+      enqueueAssistantText(message, state.buffer);
+    }
+  }
+
+  state.buffer = '';
+  finishThoughtBlock(state.activeTaggedThought);
+  finishThoughtBlock(state.activeReasoningThought);
+  state.activeTaggedThought = null;
+  state.activeReasoningThought = null;
+  state.insideTaggedThought = false;
 };
 
 const resolveTypewriterIdle = () => {
@@ -380,7 +596,7 @@ const resetTypewriter = () => {
   resolveTypewriterIdle();
 };
 
-const processSseLine = (line: string, assistantMessage: Message) => {
+const processSseLine = (line: string, assistantMessage: Message, thinkState: ThinkParseState) => {
   const trimmed = line.trim();
   if (!trimmed || !trimmed.startsWith('data:')) return false;
 
@@ -389,14 +605,15 @@ const processSseLine = (line: string, assistantMessage: Message) => {
   if (data === '[DONE]') return true;
 
   try {
-    const chunkText = extractChunkText(JSON.parse(data));
-    if (chunkText) {
+    const chunk = extractChunkParts(JSON.parse(data));
+    if (chunk.reasoning || chunk.content) {
       isThinking.value = false;
-      enqueueAssistantText(assistantMessage, chunkText);
+      appendReasoningText(assistantMessage, thinkState, chunk.reasoning);
+      consumeTaggedThoughtMarkup(assistantMessage, thinkState, chunk.content);
     }
   } catch {
     isThinking.value = false;
-    enqueueAssistantText(assistantMessage, data);
+    consumeTaggedThoughtMarkup(assistantMessage, thinkState, data);
   }
 
   return false;
@@ -432,14 +649,21 @@ const requestStreamingAnswer = async (query: string) => {
       throw new Error(errorDetail || `知识库服务返回 ${response.status}`);
     }
 
-    const assistantMessage = reactive<Message>({ role: 'assistant', text: '' });
+    const assistantMessage = reactive<Message>({ role: 'assistant', text: '', thoughts: [] });
     messages.value.push(assistantMessage);
+    const thinkState = createThinkParseState();
 
     const contentType = response.headers.get('content-type') || '';
     if (contentType.includes('application/json')) {
       const payload = await response.json();
       isThinking.value = false;
-      enqueueAssistantText(assistantMessage, extractChunkText(payload) || '知识库服务暂未返回可展示的回答。');
+      const chunk = extractChunkParts(payload);
+      appendReasoningText(assistantMessage, thinkState, chunk.reasoning);
+      consumeTaggedThoughtMarkup(assistantMessage, thinkState, chunk.content);
+      flushThinkParseState(assistantMessage, thinkState);
+      if (!assistantMessage.text.trim() && (assistantMessage.thoughts?.length || 0) === 0) {
+        enqueueAssistantText(assistantMessage, '知识库服务暂未返回可展示的回答。');
+      }
       await scrollToBottom();
       return;
     }
@@ -463,7 +687,7 @@ const requestStreamingAnswer = async (query: string) => {
       buffer = lines.pop() || '';
 
       for (const line of lines) {
-        if (processSseLine(line, assistantMessage)) {
+        if (processSseLine(line, assistantMessage, thinkState)) {
           doneSignalReceived = true;
           break;
         }
@@ -472,10 +696,12 @@ const requestStreamingAnswer = async (query: string) => {
 
     buffer += decoder.decode();
     if (buffer.trim()) {
-      processSseLine(buffer, assistantMessage);
+      processSseLine(buffer, assistantMessage, thinkState);
     }
 
-    if (!assistantMessage.text.trim() && typewriterQueue.length === 0) {
+    flushThinkParseState(assistantMessage, thinkState);
+
+    if (!assistantMessage.text.trim() && typewriterQueue.length === 0 && (assistantMessage.thoughts?.length || 0) === 0) {
       assistantMessage.text = '知识库服务暂未返回可展示的回答。';
     }
 
@@ -857,10 +1083,110 @@ const submitMessage = async () => {
   border: 1px solid rgba(13, 27, 42, 0.05);
 }
 
+.reasoning-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.reasoning-block {
+  overflow: hidden;
+  border: 1px solid rgba(100, 116, 139, 0.16);
+  border-radius: 8px;
+  background-color: #f8fafc;
+  transition:
+    border-color 0.25s ease,
+    background-color 0.25s ease;
+}
+
+.reasoning-block.active {
+  border-color: rgba(123, 44, 191, 0.24);
+  background-color: #fbf8ff;
+}
+
+.reasoning-toggle {
+  width: 100%;
+  min-height: 36px;
+  padding: 8px 10px;
+  border: 0;
+  background: transparent;
+  color: #475569;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-align: left;
+}
+
+.reasoning-toggle:hover {
+  color: var(--primary-color);
+  background-color: rgba(123, 44, 191, 0.04);
+}
+
+.reasoning-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: #94a3b8;
+  flex-shrink: 0;
+}
+
+.reasoning-block.active .reasoning-status-dot {
+  background-color: var(--primary-color);
+  box-shadow: 0 0 0 4px rgba(123, 44, 191, 0.1);
+  animation: reasoning-dot-pulse 1.25s ease-in-out infinite;
+}
+
+@keyframes reasoning-dot-pulse {
+  0%, 100% { transform: scale(0.9); opacity: 0.65; }
+  50% { transform: scale(1.18); opacity: 1; }
+}
+
+.reasoning-title {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.reasoning-index {
+  color: #94a3b8;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.reasoning-chevron {
+  width: 14px;
+  height: 14px;
+  color: currentColor;
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.reasoning-block.open .reasoning-chevron {
+  transform: rotate(180deg);
+}
+
+.reasoning-content {
+  border-top: 1px solid rgba(100, 116, 139, 0.12);
+  padding: 9px 10px 11px;
+  color: #64748b;
+  font-size: 0.8rem;
+  line-height: 1.58;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
 /* bubble texts formatting */
 .bubble-content {
   font-size: 0.88rem;
   line-height: 1.6;
+  overflow-wrap: anywhere;
 }
 
 .bubble-content.typing::after {
