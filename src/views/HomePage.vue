@@ -223,7 +223,8 @@ onUnmounted(() => {
   overflow: hidden;
   box-sizing: border-box;
   flex-shrink: 0;
-  padding-top: 120px; /* 每一个 slide 顶部预留出 120px 宽裕的空白，完美躲避顶栏 */
+  padding-top: 90px; /* 顶部避让顶栏 */
+  padding-bottom: 90px; /* 底部对称留白，确保 Flex 居中在绝对视觉中心 */
 }
 
 /* 第一个 slide 的 banner 必须占满全屏，不加顶部避让 padding */
@@ -242,6 +243,7 @@ onUnmounted(() => {
 .page-section.last-section {
   display: flex;
   flex-direction: column;
+  padding-bottom: 0 !important; /* 取消底部边距，让 Footer 紧贴屏幕最底部 */
 }
 
 .last-section-inner {

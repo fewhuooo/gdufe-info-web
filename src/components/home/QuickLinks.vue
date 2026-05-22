@@ -313,25 +313,68 @@ const links = [
 }
 
 @media (max-width: 1024px) {
+  .quick-links-section {
+    padding: 40px 0;
+  }
   .grid-layout {
     grid-template-columns: 1fr;
-    gap: 40px;
+    gap: 24px;
   }
-}
-
-@media (max-width: 600px) {
+  .subsection-title {
+    margin-bottom: 16px;
+    font-size: 1.2rem;
+  }
+  
+  /* 画廊改为上1下2的两排布局 */
   .gallery-grid {
-    grid-template-columns: 1fr;
-    grid-template-rows: repeat(3, 160px);
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: 120px 120px;
+    gap: 12px;
   }
   .gallery-item.large {
+    grid-column: span 2;
     grid-row: span 1;
   }
-  .links-grid {
-    grid-template-columns: 1fr;
+  .gallery-info {
+    padding: 12px;
   }
+  .gallery-info h4 {
+    font-size: 0.95rem;
+  }
+  
+  /* 快捷入口强制两排/两列布局 */
+  .links-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .link-card {
+    padding: 10px;
+  }
+  .icon-box {
+    width: 32px;
+    height: 32px;
+    margin-right: 8px;
+  }
+  .icon-box svg {
+    width: 18px;
+    height: 18px;
+  }
+  .link-info h4 {
+    font-size: 0.85rem;
+  }
+  .link-info p {
+    display: none; /* 移动端隐藏描述以节省空间 */
+  }
+  
+  /* 底部按钮保持同行两列 */
   .action-footer {
-    flex-direction: column;
+    flex-direction: row;
+    gap: 12px;
+  }
+  .special-btn {
+    padding: 12px;
+    font-size: 0.85rem;
   }
 }
 </style>

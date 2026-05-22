@@ -636,7 +636,31 @@ const currentData = computed(() => {
 @media (max-width: 1024px) {
   .news-layout-grid {
     grid-template-columns: 1fr;
-    gap: 20px;
+    gap: 16px;
+  }
+  .featured-image-container {
+    height: 12rem;
+  }
+  .featured-content-box {
+    padding: 16px;
+  }
+  .featured-title {
+    font-size: 1.15rem;
+    margin-bottom: 6px;
+  }
+  .featured-summary {
+    font-size: 0.85rem;
+    margin-bottom: 8px;
+    -webkit-line-clamp: 2;
+  }
+  .grid-2x2-wrapper {
+    gap: 12px;
+  }
+  .grid-card-item {
+    height: 8.5rem;
+  }
+  .grid-card-title {
+    font-size: 0.9rem;
   }
 }
 </style>
