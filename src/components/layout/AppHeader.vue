@@ -617,7 +617,8 @@ onUnmounted(() => {
 .logo-area {
   display: flex;
   align-items: center;
-  gap: 20px; /* 大气舒张间距 */
+  gap: 24px; /* Slightly increased gap for larger logo */
+  margin-left: -40px; /* Moved further to the left */
   color: white;
   flex-shrink: 0;
 }
@@ -632,8 +633,8 @@ onUnmounted(() => {
 .college-logo-svg,
 .gdufe-seal-img,
 .college-logo-img {
-  width: 68px; /* 进一步放大至 68px，气势磅礴 */
-  height: 68px;
+  width: 88px; /* Further enlarged to 88px */
+  height: 88px;
   object-fit: contain;
   filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.3));
 }
@@ -657,7 +658,7 @@ onUnmounted(() => {
 }
 
 .univ-name-img {
-  height: 3.0rem; /* 进一步放大至 3.0rem，清晰舒展 */
+  height: 3.8rem; /* Enlarged to 3.8rem */
   width: auto;
   object-fit: contain;
   vertical-align: middle;
@@ -1376,6 +1377,9 @@ onUnmounted(() => {
 
 /* 1024px 以下: 平板及移动端主适配 */
 @media (max-width: 1024px) {
+  .logo-area {
+    margin-left: 0;
+  }
   .main-nav {
     display: none !important;
   }

@@ -455,11 +455,23 @@ const menuItems = ref([
 @media (max-width: 1024px) {
   .admission-grid {
     grid-template-columns: 1fr;
-    gap: 40px;
+    gap: 16px;
+  }
+  
+  .column-header {
+    margin-bottom: 12px;
+  }
+  
+  .menu-list-item {
+    padding: 12px 16px;
+  }
+  
+  .item-name-text {
+    font-size: 1rem;
   }
   
   .video-card-container {
-    height: 320px;
+    height: 220px;
   }
 }
 </style>

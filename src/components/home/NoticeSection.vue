@@ -443,7 +443,28 @@ const academics = ref([
 @media (max-width: 1024px) {
   .notice-layout-grid {
     grid-template-columns: 1fr;
-    gap: 40px;
+    gap: 16px;
+  }
+  .column-header {
+    margin-bottom: 12px;
+  }
+  .notice-list-item {
+    padding: 10px 0;
+  }
+  .notice-item-title {
+    font-size: 0.95rem;
+    margin: 0 0 4px 0;
+  }
+  .academic-grid-2x2 {
+    gap: 12px;
+  }
+  .academic-card-item {
+    height: 7.5rem;
+    padding: 1rem;
+  }
+  .academic-card-title {
+    font-size: 0.9rem;
+    -webkit-line-clamp: 2;
   }
 }
 </style>
